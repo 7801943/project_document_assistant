@@ -1,0 +1,1758 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的工作台</title>
+
+    <script type="text/javascript" src="/static/base64.min.js" defer></script>
+    <!-- Added from botui.html -->
+    <script src="/static/marked.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* Styles from index4.html */
+        :root, html[data-theme='light'] {
+            --primary-color: #0d6efd;
+            --bg-color: #e9ecef; /* 明亮模式背景稍微调暗 */
+            --rgb-bg-color: 233, 236, 239;
+            --panel-color: #f8f9fa; /* 面板颜色也相应调整 */
+            --rgb-panel-color: 248, 249, 250;
+            --border-color: #dee2e6;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --header-height: 60px;
+
+            /* PDF.js viewer variables override */
+            --sidebar-width: 250px;
+            --toolbar-bg-color: var(--panel-color);
+            --toolbar-border-color: var(--border-color);
+            --body-bg-color: var(--bg-color); /* pdf.js body-bg-color */
+            --page-bg-color: var(--panel-color);
+            --main-color: var(--text-primary);
+            --sidebar-toolbar-bg-color: var(--bg-color);
+            --doorhanger-bg-color: var(--panel-color);
+            --doorhanger-border-color: var(--border-color);
+            --field-bg-color: var(--bg-color);
+            --field-border-color: var(--border-color);
+            --toggled-btn-bg-color: var(--primary-color);
+        }
+        html[data-theme='dark'] {
+            --primary-color: #0d6efd;
+            --bg-color: #121212; /* index4 dark bg */
+            --rgb-bg-color: 18, 18, 18;
+            --panel-color: #1e1e1e; /* index4 dark panel */
+            --rgb-panel-color: 30, 30, 30;
+            --border-color: #343a40;
+            --text-primary: #e9ecef;
+            --text-secondary: #adb5bd;
+            --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.15);
+
+            /* PDF.js viewer variables override */
+            --toolbar-bg-color: var(--panel-color);
+            --toolbar-border-color: var(--border-color);
+            --body-bg-color: var(--bg-color); /* pdf.js body-bg-color */
+            --page-bg-color: var(--panel-color);
+            --main-color: var(--text-primary);
+            --sidebar-toolbar-bg-color: var(--bg-color);
+            --doorhanger-bg-color: var(--panel-color);
+            --doorhanger-border-color: var(--border-color);
+            --field-bg-color: var(--bg-color);
+            --field-border-color: var(--border-color);
+            --toggled-btn-bg-color: var(--primary-color);
+        }
+        body, html { /* This body style is from index4.html, botui.html's body style is removed */
+            margin: 0; padding: 0; height: 100vh; width: 100vw;
+            font-family: "Inter", "Segoe UI", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif; /* index4 font, botui uses Inter too */
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .app-wrapper { display: flex; flex-direction: column; height: 100%; }
+        .app-header {
+            display: flex; justify-content: space-between; align-items: center;
+            height: var(--header-height); padding: 0 24px;
+            background-color: var(--panel-color);
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0; transition: background-color 0.3s, border-color 0.3s;
+        }
+        .app-header .title-container { display: flex; align-items: center; } /* 新增容器 */
+        .app-header .title { font-size: 1.25rem; font-weight: 600; }
+        #login-status-indicator { margin-left: 15px; font-size: 0.9em; font-weight: 500; color: var(--text-secondary); }
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .theme-toggle-button { /* This is index4.html's theme toggle button */
+            background-color: var(--primary-color); /* 修改为实体背景 */
+            border: none; /* 移除边框 */
+            color: white; /* 修改图标颜色以适应背景 */
+            width: 38px; height: 38px; border-radius: 6px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            transition: all 0.2s ease;
+        }
+        .theme-toggle-button:hover { background-color: #0b5ed7; /* 更深的蓝色 for hover */ color: white; }
+        .theme-toggle-button .moon-icon { display: none; }
+        html[data-theme='dark'] .theme-toggle-button .sun-icon { display: none; }
+        html[data-theme='dark'] .theme-toggle-button .moon-icon { display: block; }
+
+        .auth-button { /* 原 logout-button，现为 auth-button */
+            display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+            /* color: var(--text-secondary); */ /* 将由具体类设置 */
+            /* background-color: transparent; */ /* 将由具体类设置 */
+            border: none; /* 为实体外观移除边框 */
+            border-radius: 6px;
+            text-decoration: none; font-weight: 500; transition: all 0.2s ease;
+            cursor: pointer; /* 确保在 JS 控制 href 时仍显示为可点击 */
+        }
+        /* .auth-button:hover { background-color: var(--bg-color); color: var(--primary-color); } */ /* 已移除通用 hover */
+        .auth-button.login { background-color: var(--primary-color); color: white; } /* 登录按钮蓝色样式 - 实体 */
+        .auth-button.login:hover { background-color: #0b5ed7; /* 更深的蓝色 */ color: white; }
+        .auth-button.logout { background-color: #dc3545; color: white; } /* 登出按钮红色样式 - 实体 */
+        .auth-button.logout:hover { background-color: #bb2d3b; /* 更深的红色 */ color: white; }
+
+
+        .main-container { display: flex; height: calc(100vh - var(--header-height)); }
+        .left-panel {
+            flex: 0 0 65%; display: flex; flex-direction: column;
+            background-color: var(--panel-color);
+            border-right: 1px solid var(--border-color);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .right-panel { flex: 1 1 auto; display: flex; /* botui container will be child of this */ }
+        .tab-navigation {
+            display: flex; flex-shrink: 0; overflow-x: auto;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 16px; background-color: var(--panel-color);
+        }
+        #tab-container { /* 新增样式 */
+            display: flex;
+        }
+        .tab-button {
+            display: flex; align-items: center; flex-shrink: 0; gap: 8px; padding: 12px 16px;
+            cursor: pointer; border: none; border-bottom: 3px solid transparent; background-color: transparent;
+            font-size: 14px; color: var(--text-secondary); transition: all 0.2s;
+        }
+        .tab-button:hover { color: var(--primary-color); }
+        .tab-button.active {
+            color: var(--primary-color);
+            border-bottom-color: var(--primary-color);
+            font-weight: 600;
+            background-color: rgba(13, 110, 253, 0.1); /* 突出显示激活的标签 */
+        }
+        .close-tab {
+            margin-left: 10px; border-radius: 50%; width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; line-height: 1; transition: background-color 0.2s;
+        }
+        html[data-theme='light'] .close-tab:hover { background-color: #e9ecef; }
+        html[data-theme='dark'] .close-tab:hover { background-color: #343a40; }
+
+        .content-viewer { flex-grow: 1; position: relative; overflow: hidden; background-color: var(--bg-color); }
+        /* #chatbot-iframe style removed as iframe is removed */
+        .placeholder { display: flex; justify-content: center; align-items: center; height: 100%; color: var(--text-secondary); flex-direction: column; gap: 10px; }
+
+        /* 新增工作目录视图样式 */
+        #workdir-viewer {
+            padding: 20px;
+            height: 100%;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        #workdir-viewer h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        .workdir-file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .workdir-file-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+        .workdir-file-list li:hover {
+            background-color: rgba(var(--rgb-panel-color), 0.5);
+        }
+        .workdir-file-list .file-name {
+            font-size: 0.9em; /* 减小字体大小 */
+            /* 确保长路径不会挤压按钮 */
+            word-break: break-all; /* 允许长路径在任意位置换行 */
+            flex-grow: 1; /* 占据多余空间 */
+            margin-right: 15px; /* 与按钮组保持距离 */
+            text-align: left; /* 保持文本内容本身是左对齐的 */
+        }
+        .workdir-file-list .button-group {
+            display: flex;
+            flex-shrink: 0; /* 防止按钮组被压缩 */
+        }
+        .workdir-action-btn {
+            padding: 5px 12px;
+            border: 1px solid var(--border-color);
+            background-color: var(--panel-color);
+            color: var(--text-primary);
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-left: 8px;
+        }
+        .workdir-action-btn:hover {
+            opacity: 0.8;
+        }
+        .workdir-action-btn.open-file-btn {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+        .workdir-action-btn.llm-read-btn {
+            background-color: #198754;
+            border-color: #198754;
+            color: white;
+        }
+        .workdir-action-btn:disabled {
+            background-color: var(--border-color);
+            color: var(--text-secondary);
+            cursor: not-allowed;
+            opacity: 0.6;
+            border-color: var(--border-color);
+        }
+
+
+        /* Styles from botui.html - START */
+        /*
+           The :root and html[data-theme='dark'] variables from botui.html are integrated here.
+           If variable names match index4.html, index4.html's definitions (above) will take precedence for global theme.
+           botui.html's specific component styles will use these variables.
+           The primary theme (bg-color, text-primary, panel-color, border-color) will be driven by index4.html's definitions.
+        */
+        :root { /* botui.html's :root variables, may be complemented by index4's */
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Consistent with index4 */
+            /* --color-bg: #f0f2f5; /* Controlled by index4's --bg-color */
+            --color-container-bg: var(--panel-color); /* For chat container specific background if needed, or use var(--panel-color) */
+            --color-message-window-bg: var(--panel-color); /* Specific to message window, 保持与面板一致 */
+            --color-form-bg: #f8f9fa; /* Specific to chat form */
+            /* --color-text-main: #333333; /* Controlled by index4's --text-primary */
+            --color-text-light: #555555; /* For lighter text within chat */
+            /* --color-border: #e0e0e0; /* Controlled by index4's --border-color */
+            --color-user-bubble-bg: #007bff;
+            --color-user-bubble-text: #ffffff;
+            --color-bot-bubble-bg: #e9ecef;
+            --color-bot-bubble-text: #333333;
+            --color-agent-bubble-bg: #f8f9fa;
+            --color-link: #0066cc;
+            --shadow-main: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        html[data-theme='dark'] { /* botui.html's dark theme variables, complementing index4's */
+            /* --color-bg: #121212; /* Controlled by index4's --bg-color */
+            --color-container-bg: #1e1e1e; /* For chat container specific background, or use var(--panel-color) */
+            --color-message-window-bg: #1e1e1e; /* Specific to message window */
+            --color-form-bg: #2c2c2c; /* Specific to chat form */
+            /* --color-text-main: #e0e0e0; /* Controlled by index4's --text-primary */
+            --color-text-light: #bbbbbb; /* For lighter text within chat */
+            /* --color-border: #3a3a3a; /* Controlled by index4's --border-color */
+            --color-user-bubble-bg: #377dff;
+            --color-user-bubble-text: #ffffff;
+            --color-bot-bubble-bg: #333333;
+            --color-bot-bubble-text: #e0e0e0;
+            --color-agent-bubble-bg: #2c2c2c;
+            --color-link: #58a6ff;
+            --shadow-main: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        /* body style from botui.html is removed */
+        #chat-container { /* This is the main container for botui content */
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-color: var(--panel-color); /* Use index4's panel color for consistency */
+            /* border-radius: 12px; /* Optional */
+            box-shadow: var(--shadow-main); /* Uses botui's shadow var */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        #chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        #chat-title {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+        #new-chat-button {
+            background-color: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 5px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+        }
+        #new-chat-button:hover {
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        #message-window {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: var(--color-message-window-bg); /* Uses specific var, should adapt to theme */
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: background-color 0.2s;
+        }
+        .message {
+            padding: 8px 14px;
+            border-radius: 18px;
+            max-width: 80%;
+            line-height: 1.6;
+            word-wrap: break-word;
+            word-break: break-all;
+            font-size: 0.9em;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .message a { color: var(--color-link); text-decoration: underline; }
+        .user-message a { color: var(--color-user-bubble-text); font-weight: 500; }
+        .user-message {
+            background-color: var(--color-user-bubble-bg);
+            color: var(--color-user-bubble-text);
+            align-self: flex-end;
+            border-bottom-right-radius: 6px;
+        }
+        .bot-message {
+            background-color: var(--color-bot-bubble-bg);
+            color: var(--color-bot-bubble-text);
+            align-self: flex-start;
+            border-bottom-left-radius: 6px;
+        }
+        .bot-message h1, .bot-message h2, .bot-message h3, .bot-message h4 { margin: 0.8em 0 0.4em 0; line-height: 1.3; }
+        .bot-message h3 { font-size: 1.1em; font-weight: 600; }
+        .bot-message p { margin: 0 0 0.5em 0; }
+        .bot-message p:last-child { margin-bottom: 0; }
+        .bot-message ul, .bot-message ol { padding-left: 25px; margin: 0.5em 0; }
+        .bot-message li { margin-bottom: 0.2em; }
+        .bot-message strong { font-weight: 600; }
+        .bot-message pre, .bot-message code {
+            font-family: monospace;
+            background-color: rgba(0,0,0,0.08);
+            padding: 2px 5px;
+            border-radius: 4px;
+            white-space: pre-wrap; /* 关键：保留格式但允许换行 */
+            word-break: break-all;   /* 关键：在长单词或URL内部强制换行 */
+        }
+        .bot-message pre {
+            padding: 10px;
+            margin: 0.5em 0;
+            overflow-x: auto; /* 如果需要，可以添加水平滚动条 */
+        }
+        .agent-thought { background-color: var(--color-agent-bubble-bg); border: 1px solid var(--border-color); color: var(--color-text-light); align-self: center; width: 90%; max-width: 90%; font-size: 0.8em; border-radius: 8px; padding: 0; }
+        .agent-thought summary { padding: 8px 15px; font-weight: 500; cursor: pointer; outline: none; }
+        .agent-thought .collapsible-content { padding: 5px 15px 10px 15px; margin: 0; font-size: 0.9em; line-height: 1.4; color: var(--text-primary); white-space: pre-wrap; background-color: transparent; border-top: 1px solid var(--border-color); }
+        #chat-form { display: flex; padding: 10px; border-top: 1px solid var(--border-color); background-color: var(--color-form-bg); align-items: flex-end; }
+        #chat-input {
+            flex-grow: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 10px 15px;
+            font-size: 0.9em;
+            font-family: inherit;
+            background-color: var(--panel-color); /* Use index4's panel color for input bg */
+            color: var(--text-primary); /* Use index4's text color for input text */
+            resize: none;
+            max-height: 150px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+        #chat-input:focus { outline: none; border-color: var(--color-user-bubble-bg); } /* Uses botui's user bubble color for focus */
+        #chat-form button { height: 42px; margin-left: 10px; padding: 10px 20px; background-color: var(--color-user-bubble-bg); color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 16px; transition: opacity 0.2s; }
+        #chat-form button:hover { opacity: 0.8; }
+        #chat-form button:disabled {
+            background-color: #cccccc;
+            color: #666666;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        #chat-form button:disabled:hover {
+            opacity: 0.7; /* 确保禁用时悬停状态不改变透明度 */
+        }
+
+        #stop-ai-button {
+            /* Styles for the stop button, matching send button where appropriate */
+            padding: 0px 15px; /* Adjusted padding to vertically center text with fixed height */
+            height: 42px;    /* Match send button height */
+            border: none;
+            border-radius: 20px; /* Match send button */
+            cursor: pointer;
+            font-size: 16px;   /* Match send button */
+            transition: opacity 0.2s, background-color 0.2s;
+            /* margin-left: 5px; is already in its inline style */
+            /* Enabled state background-color (#ffc107) and color (black) are in its inline style */
+        }
+
+        #stop-ai-button:disabled {
+            background-color: #cccccc !important; /* Light grey for disabled. !important overrides inline style. */
+            color: #666666 !important;       /* Darker grey text for disabled. !important overrides inline style. */
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* #theme-toggle style from botui.html is removed as the button itself is removed */
+        .thinking span { display: inline-block; background-color: #999; width: 8px; height: 8px; border-radius: 50%; margin: 0 1px; animation: bounce 1.4s infinite ease-in-out both; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
+        /* Styles from botui.html - END */
+
+        /* Login Modal Styles */
+        .login-modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            /* Flexbox for centering */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-modal-content {
+            background-color: var(--panel-color);
+            color: var(--text-primary);
+            margin: auto; /* Not strictly needed with flex, but good fallback */
+            padding: 30px 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            position: relative;
+            text-align: center;
+        }
+        .login-modal-content h1 { margin-top: 0; margin-bottom: 25px; font-size: 1.8em; color: var(--text-primary); }
+        .login-modal-content .form-group { margin-bottom: 20px; text-align: left; }
+        .login-modal-content label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-secondary); }
+        .login-modal-content input[type="text"],
+        .login-modal-content input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            background-color: var(--bg-color); /* Use bg-color for inputs */
+            color: var(--text-primary);
+            font-size: 1em;
+        }
+        .login-modal-content input[type="text"]:focus,
+        .login-modal-content input[type="password"]:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 0.2rem rgba(var(--primary-color), 0.25); /* Check primary color format for rgba */
+        }
+        .login-modal-content .remember-group { display: flex; align-items: center; margin-bottom: 25px; justify-content: flex-start; }
+        .login-modal-content .remember-group input[type="checkbox"] { width: auto; margin-right: 8px; }
+        .login-modal-content .remember-group label { margin-bottom: 0; font-weight: normal; }
+
+        .login-modal-content button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .login-modal-content button[type="submit"]:hover { background-color: #0b5ed7; /* Darker shade of primary */ }
+        .login-modal-content .error-message { color: #dc3545; margin-top: 15px; text-align: center; font-weight: 500; min-height: 1.2em; }
+        .close-modal-button {
+            color: var(--text-secondary);
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+        .close-modal-button:hover,
+        .close-modal-button:focus {
+            color: var(--text-primary);
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        /* Upload Modal Styles (reusing login modal styles where possible) */
+        #upload-spec-modal .form-group {
+            margin-bottom: 15px;
+        }
+        #upload-spec-modal input[type="file"] {
+            padding: 8px;
+        }
+        #upload-spec-modal .progress-area {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #upload-spec-modal .progress-bar-container {
+            width: 100%;
+            background-color: var(--bg-color);
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            height: 20px;
+            overflow: hidden;
+        }
+        #upload-spec-modal .progress-bar {
+            width: 0%;
+            height: 100%;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+        #upload-spec-modal .progress-text {
+            margin-top: 5px;
+            font-size: 0.9em;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-wrapper">
+        <header class="app-header">
+            <div class="title-container"> <!-- Title and status in a container -->
+                <div class="title">我的工作台</div>
+                <span id="login-status-indicator"></span>
+            </div>
+            <div class="header-actions">
+                <button id="upload-spec-button" class="auth-button login" style="background-color: #198754; margin-right: 10px;" title="上传本地规程目录">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-arrow-up-fill" viewBox="0 0 16 16">
+                        <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2m2.354 5.146a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0z"/>
+                    </svg>
+                    <span style="margin-left: 8px;">上传规程</span>
+                </button>
+                <button id="theme-toggle" class="theme-toggle-button" title="切换主题">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m-4.646.354a.5.5 0 0 1-.708 0l-1.414-1.414a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708m9.193 0a.5.5 0 0 1 0-.708l1.414-1.414a.5.5 0 0 1 .708.707l-1.414 1.414a.5.5 0 0 1-.708 0m-9.193-9.193a.5.5 0 0 1-.708-.707l1.414-1.414a.5.5 0 1 1 .707.707L3.354 5.354a.5.5 0 0 1 0-.708M13.646 5.354a.5.5 0 0 1 0 .707L12.232 7.5a.5.5 0 0 1-.707-.707L13.646 5.354a.5.5 0 0 1 .708 0M1.5 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1.5 8m13 0a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5"/></svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+                </button>
+                <a id="auth-button" href="/logout" class="auth-button logout"> <!-- Changed class and added id -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/></svg>
+                    <span id="auth-button-text">登出</span> <!-- Added id -->
+                </a>
+            </div>
+        </header>
+        <main class="main-container">
+            <div class="left-panel">
+                <nav class="tab-navigation" id="tab-navigation-container">
+                    <button id="workdir-tab-button" class="tab-button" title="查看工作目录">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder" viewBox="0 0 16 16">
+                            <path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996.816l.637 7a1 1 0 0 0 .995.816h10.348a1 1 0 0 0 .995-.816l.637-7A1 1 0 0 0 13.81 4H2.19zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139C1.72 3.72 1.94 4 2.19 4h11.62c.25-1 .47.28.72.28.006.139l.006.139a1 1 0 0 0-1-.981H9.828a1 1 0 0 0-.707-.293z"/>
+                        </svg>
+                        <span>工作目录</span>
+                    </button>
+                    <div id="tab-container"></div>
+                </nav>
+                <div class="content-viewer" id="content-viewer">
+                    <div id="placeholder" class="placeholder" style="display: flex; width: 100%; height: 100%;"><span>请选择一个文件进行预览</span></div>
+                    <div id="workdir-viewer" style="display: none;">
+                        <h3 id="workdir-path">工作目录</h3>
+                        <ul id="workdir-file-list" class="workdir-file-list">
+                            <!-- 文件列表将动态填充于此 -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="right-panel">
+                <!-- Content from botui.html's #chat-container, with its internal theme toggle button removed -->
+                <div id="chat-container">
+                    <div id="chat-header">
+                        <span id="chat-title">聊天</span>
+                        <button id="new-chat-button" title="开始一个新的对话">新对话</button>
+                    </div>
+                    <!-- botui.html's theme-toggle button was here, now removed -->
+                    <div id="message-window"></div>
+                    <form id="chat-form">
+                        <textarea id="chat-input" placeholder="请输入消息 (Shift+Enter 换行)" rows="1"></textarea>
+                        <button type="submit" title="发送" id="send-button">发送</button>
+                        <button type="button" title="停止AI输出" id="stop-ai-button" style="margin-left: 5px; background-color: #ffc107; color: black;" disabled>停止</button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Upload Spec Modal Container -->
+    <div id="upload-modal-container"></div>
+
+
+<script>
+    // --- Global State & DOM Refs from index4.html ---
+    const appState = {
+        openFiles: {},
+        activeFile: null,
+        sessionId: null,
+        isLoggedIn: false, // 新增登录状态
+        activeView: 'placeholder', // 新增：追踪当前视图 'placeholder', 'iframe', 'workdir'
+    };
+    // const chatbotIframe = document.getElementById('chatbot-iframe'); // Removed as iframe is replaced
+    const tabContainer = document.getElementById('tab-container');
+    const workdirTabButton = document.getElementById('workdir-tab-button');
+    const placeholder = document.getElementById('placeholder');
+    const contentViewer = document.getElementById('content-viewer'); // 新增：iframe 的容器
+    const workdirViewer = document.getElementById('workdir-viewer');
+    const loginStatusIndicator = document.getElementById('login-status-indicator');
+    const authButton = document.getElementById('auth-button');
+    const authButtonText = document.getElementById('auth-button-text');
+    let chatSocket = null; // 新增聊天专用的 WebSocket
+
+    // Login Modal DOM elements
+    let loginModal, closeModalButton, modalLoginForm, modalUsernameInput, modalPasswordInput, modalRememberCheckbox, modalErrorBox;
+
+    // Upload Modal DOM elements (will be initialized dynamically)
+    let uploadSpecModal, closeUploadModalButton, uploadSpecForm, uploadCategoryInput,
+        uploadSpecNameInput, uploadFilesInput, uploadOverwriteCheckbox, uploadErrorBox,
+        uploadProgressArea, uploadProgressBar, uploadProgressText;
+    // The trigger button is static
+    const uploadSpecButton = document.getElementById('upload-spec-button');
+
+
+    const MAX_WEBSOCKET_RETRIES = 5;
+    const WEBSOCKET_RETRY_INTERVAL = 5000;
+
+    let chatWebsocketRetryCount = 0; // 新增: 用于 chatSocket
+    let chatWebsocketRetryTimer = null; // 新增: 用于 chatSocket
+
+    // --- Theme Management from index4.html (controls everything) ---
+    const themeToggle = document.getElementById('theme-toggle'); // This is index4.html's main theme toggle
+    const getPreferredTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const setTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        // The chat component's theme should update automatically via CSS using html[data-theme='dark']
+    };
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    });
+
+    // --- Viewer Logic from index4.html ---
+    function showViewer(type, filename) {
+        appState.activeView = type;
+
+        // 隐藏所有主视图区域
+        placeholder.style.display = 'none';
+        workdirViewer.style.display = 'none';
+        contentViewer.querySelectorAll('iframe').forEach(frame => frame.style.display = 'none');
+
+        // 显示指定的视图
+        if (type === 'placeholder') {
+            placeholder.style.display = 'flex';
+            placeholder.querySelector('span').textContent = filename; // filename is now the message
+        } else if (type === 'workdir') {
+            workdirViewer.style.display = 'block';
+        } else if (type === 'iframe' && filename) { // Both markdown and others use iframe now
+            const frame = contentViewer.querySelector(`iframe[data-filename="${filename}"]`);
+            if (frame) {
+                frame.style.display = 'block';
+            } else {
+                placeholder.style.display = 'flex';
+                placeholder.querySelector('span').textContent = `正在加载 ${filename}...`;
+            }
+        }
+
+        // 更新工作目录按钮的激活状态
+        workdirTabButton.classList.toggle('active', type === 'workdir');
+
+        // 如果不是查看文件，则清除文件标签的激活状态
+        if (type !== 'iframe') {
+            if (appState.activeFile) {
+                appState.activeFile = null;
+                renderTabs();
+            }
+        }
+    }
+
+    function viewFile(filename) {
+        const file = appState.openFiles[filename];
+        if (!file) {
+            console.error(`Attempting to view a non-existent file: ${filename}`);
+            showViewer('placeholder', `无法找到文件 ${filename} 的数据。`);
+            return;
+        }
+
+        if (file.type === 'markdown') {
+            viewMarkdownFile(filename);
+        } else {
+            viewIframeFile(filename);
+        }
+    }
+
+    async function viewMarkdownFile(filename) {
+        const file = appState.openFiles[filename];
+        appState.activeFile = filename;
+        renderTabs();
+
+        showViewer('iframe', filename); // Markdown也使用iframe
+
+        let frame = contentViewer.querySelector(`iframe[data-filename="${filename}"]`);
+        if (!frame) {
+            console.log(`Creating new iframe for Markdown: ${filename}`);
+            try {
+                const justTheFilename = filename.substring(filename.lastIndexOf('/') + 1);
+                const fileDownloadUrl = `/download/${file.token}/${encodeURIComponent(justTheFilename)}`;
+
+                // 将下载链接作为参数传递给 markdown.html
+                const previewUrl = `/static/markdown.html?fileUrl=${encodeURIComponent(fileDownloadUrl)}`;
+
+                const newFrame = document.createElement('iframe');
+                newFrame.dataset.filename = filename;
+                newFrame.style.cssText = 'width: 100%; height: 100%; border: none; display: none;';
+                newFrame.src = previewUrl;
+                contentViewer.appendChild(newFrame);
+
+            } catch (error) {
+                console.error(`Error preparing markdown preview for "${filename}":`, error);
+                showViewer('placeholder', `准备Markdown预览 "${filename}" 出错: ${error.message}`);
+                return;
+            }
+        }
+        showViewer('iframe', filename);
+        console.log(`Displaying iframe for markdown: ${filename}`);
+    }
+
+    function viewIframeFile(filename) {
+        const file = appState.openFiles[filename];
+        appState.activeFile = filename;
+        renderTabs();
+
+        showViewer('iframe', filename);
+
+        let frame = contentViewer.querySelector(`iframe[data-filename="${filename}"]`);
+        if (!frame) {
+            console.log(`Creating new iframe for: ${filename}`);
+            try {
+                const fastapiBaseUrl = window.location.origin;
+                //const justTheFilename = filename.substring(filename.lastIndexOf('/') + 1);
+                // 注意：这里的下载URL是给kkfileview代理的，它需要一个完整的URL
+                const justTheFilename = filename.substring(filename.lastIndexOf('/') + 1);
+                const fileDownloadUrl = `http://host.docker.internal:8888/download/${file.token}/${encodeURIComponent(justTheFilename)}`;
+
+                // 3. 构造指向后端 kkFileView 代理的 URL
+                //    后端代理是 /api/v1/kkfileview/onlinePreview
+                //    它期望一个 file_url 参数，其值是上面构造的 fileDownloadUrl
+                //    根据您的反馈和 forward_test.html 的注释，fileDownloadUrl 在这里不应再次被 encodeURIComponent
+                const previewProxyUrl = `${fastapiBaseUrl}/kkfileview/onlinePreview?file_url=${fileDownloadUrl}`;
+                console.log(`[KKFileView] 请求预览代理 (iframe.src): ${previewProxyUrl} ,传递给代理的 file_url 参数值: ${fileDownloadUrl}`);
+
+                const newFrame = document.createElement('iframe');
+                newFrame.dataset.filename = filename;
+                newFrame.style.cssText = 'width: 100%; height: 100%; border: none; display: none;';
+                newFrame.src = previewProxyUrl;
+                contentViewer.appendChild(newFrame);
+            } catch (error) {
+                console.error(`Error preparing file preview for "${filename}":`, error);
+                showViewer('placeholder', `准备文件预览 "${filename}" 出错: ${error.message}`);
+                return;
+            }
+        }
+        showViewer('iframe', filename);
+        console.log(`Displaying iframe for: ${filename}`);
+    }
+
+    // --- Tab Management Logic from index4.html ---
+    function renderTabs() {
+        tabContainer.innerHTML = '';
+        const openFilenames = Object.keys(appState.openFiles);
+        openFilenames.forEach(filename => {
+            const file = appState.openFiles[filename];
+            const button = document.createElement('button');
+            button.className = 'tab-button';
+            button.dataset.filename = filename;
+            // 新增：将完整路径作为 tooltip
+            button.title = filename;
+            if (filename === appState.activeFile) button.classList.add('active');
+            const icon = window.ICONS[file.format] || window.ICONS.default;
+            // 新增：从完整路径中提取文件名
+            const shortFilename = filename.substring(filename.lastIndexOf('/') + 1);
+            button.innerHTML = `${icon}<span>${shortFilename}</span><span class="close-tab" title="关闭标签页">&times;</span>`;
+            button.addEventListener('click', (e) => {
+                if (e.target.classList.contains('close-tab')) return;
+                viewFile(filename);
+            });
+            button.querySelector('.close-tab').addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeTab(filename);
+            });
+            tabContainer.appendChild(button);
+        });
+        const activeTab = tabContainer.querySelector('.active');
+        if (activeTab) {
+            activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+
+    function closeTab(filename) {
+        const file = appState.openFiles[filename];
+        if (file) {
+            // 所有文件类型都使用iframe
+            const frame = contentViewer.querySelector(`iframe[data-filename="${filename}"]`);
+            if (frame) {
+                frame.remove();
+                console.log(`Removed iframe for: ${filename}`);
+            }
+
+            delete appState.openFiles[filename];
+
+            if (appState.activeFile === filename) {
+                const remainingFiles = Object.keys(appState.openFiles);
+                if (remainingFiles.length > 0) {
+                    const newActiveFile = remainingFiles[remainingFiles.length - 1];
+                    viewFile(newActiveFile);
+                } else {
+                    appState.activeFile = null;
+                    showViewer('placeholder', '所有文件都已关闭。');
+                }
+            }
+            renderTabs();
+            updateWorkdirButtonStates();
+        }
+    }
+
+    // --- WebSocket Logic for Chat ---
+    function connectChatWebSocket() {
+        if (!appState.sessionId) {
+            console.error("无法连接聊天WebSocket：缺少session_id。");
+            return;
+        }
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        // 新的聊天WebSocket端点
+        const chatWsUrl = `${protocol}//${window.location.host}/ws_chat_stream?session_id=${appState.sessionId}`;
+        console.log(`正在连接到聊天 WebSocket: ${chatWsUrl}`);
+        chatSocket = new WebSocket(chatWsUrl);
+
+        chatSocket.onopen = () => {
+            console.log("聊天WebSocket 连接已建立。");
+            chatWebsocketRetryCount = 0;
+            clearTimeout(chatWebsocketRetryTimer);
+        };
+
+        chatSocket.onmessage = (event) => {
+            // console.debug("收到聊天WebSocket消息:", event.data);
+            try {
+                const message = JSON.parse(event.data);
+                if (message.type === 'chat_event_batch' && message.payload && Array.isArray(message.payload)) {
+                    if (!isStreaming) return; // 立即停止处理消息
+                    message.payload.forEach(eventData => {
+                        // console.debug("处理聊天事件:", eventData);
+                        if (eventData.answer) {
+                            botui_appendToCurrentBotMessage(eventData.answer);
+                            if (current_task_id) {
+                                botui_stopAIButton.disabled = false; // Enable button
+                            }
+                        } else if (eventData.event === 'agent_thought') {
+                            if (eventData.task_id && !current_task_id) { // Capture task_id if not already set for this stream
+                                current_task_id = eventData.task_id;
+                                console.log("Captured task_id:", current_task_id);
+                                botui_stopAIButton.disabled = false; // Enable button
+                            }
+                            const summaryParts = [];
+                            let contentText = "";
+                            if (eventData.thought) {
+                                summaryParts.push('思考内容');
+                                contentText += `思考内容: ${eventData.thought}\n`;
+                            }
+                            if (eventData.tool) {
+                                summaryParts.push('调用工具');
+                                contentText += `调用工具: ${eventData.tool}\n`;
+                                if(eventData.tool_input) contentText += `工具输入: ${eventData.tool_input}\n`;
+                            }
+                            if (eventData.observation) {
+                                if (!eventData.tool) summaryParts.push('工具结果');
+                                contentText += `工具结果: ${eventData.observation}\n`;
+                            }
+                            if (summaryParts.length > 0 || contentText.trim()) {
+                                const summaryText = summaryParts.length > 0 ? summaryParts.join('、') : 'Agent 思考步骤';
+                                // 先结束当前的气泡
+                                botui_finalizeCurrentBotMessage();
+                                // 再添加工具信息
+                                // 把工具调用，工具结果，全部放到一个折叠框里
+                                if(eventData.observation){
+                                botui_addCollapsibleMessage(`${summaryText} (点击展开)`, contentText.trim());
+                                }
+                            }
+                        } else if (eventData.event === 'message_end') {
+                            if (eventData.conversation_id) botui_conversation_id = eventData.conversation_id;
+                            botui_finalizeCurrentBotMessage();
+                            current_task_id = null; // Clear task_id as stream ended
+                            botui_stopAIButton.disabled = true; // Disable button
+                            botui_sendButton.disabled = false; // 重新启用发送按钮
+                        } else if (eventData.conversation_id) {
+                            botui_conversation_id = eventData.conversation_id;
+                        }
+                    });
+                } else if (message.type === 'stop_request_processed') {
+                    console.log("Stop request processed by server:", message);
+                    botui_addMessage(`<i>已发送停止指令 (任务: ${message.task_id}, 状态: ${message.status})</i>`, 'bot');
+                    if (message.status === 'success') {
+                        // Stream should stop via Dify, message_end will handle UI cleanup
+                        // botui_stopAIButton.style.display = 'none'; // Handled by message_end
+                        // current_task_id = null; // Handled by message_end
+                    }
+                    botui_stopAIButton.disabled = true; // 停止按钮应被禁用，直到下一次流开始
+                    botui_sendButton.disabled = false; // 重新启用发送按钮
+                } else if (message.type === 'error') {
+                    console.error("聊天WebSocket收到错误消息:", message.content, message.details || '');
+                    botui_addMessage(`😥 **聊天服务器错误**: ${message.content}${message.details ? ` (${message.details})` : ''}`, 'bot');
+                    botui_finalizeCurrentBotMessage();
+                    current_task_id = null;
+                    botui_stopAIButton.disabled = true; // Disable button
+                    botui_sendButton.disabled = false; // 重新启用发送按钮
+                } else if (message.type === 'file_open_request' && message.payload) { // 新增对 file_open_request 的处理
+                    console.log("聊天WebSocket收到 file_open_request:", message.payload);
+                    handleFileOpenRequest(message.payload); // 复用现有的处理函数
+                } else if (message.type === 'directory_update' && message.payload) {
+                    console.log("聊天WebSocket收到 directory_update:", message.payload);
+                    handleDirectoryUpdate(message.payload);
+                } else {
+                    console.warn("收到未知的聊天WebSocket消息类型:", message);
+                }
+            } catch (e) {
+                console.error("处理聊天WebSocket消息时出错:", e, "原始数据:", event.data);
+            }
+        };
+
+        chatSocket.onclose = (event) => {
+            console.warn(`聊天WebSocket 连接已关闭。代码: ${event.code}, 原因: '${event.reason}'`);
+            clearTimeout(chatWebsocketRetryTimer);
+
+            // Bug 3: 如果是服务器因为 session_id 无效而主动关闭，则不重连
+            if (event.code === 1008 || event.code === 1011) {
+                console.error(`服务器关闭连接 (代码: ${event.code})，原因: "${event.reason}"。停止重连。`);
+                botui_addMessage(`与服务器的连接已断开: ${event.reason} 请尝试重新登录。`, 'bot');
+                updateLoginStatusUI(false); // 更新UI到未登录状态，以提示用户重新登录
+                return; // 明确阻止后续的重连逻辑
+            }
+
+            if (event.code === 1000 || event.code === 1001 || event.code === 1005) {
+                console.log(`聊天WebSocket normally closed. Code: ${event.code}, Reason: '${event.reason}'`);
+                if (appState.isLoggedIn) {
+                    console.warn("聊天WebSocket closed normally but unexpectedly while logged in.");
+                    handleChatWebSocketDisconnect(); // 调用新的处理函数
+                }
+                return;
+            }
+            console.warn(`聊天WebSocket abnormally closed. Code: ${event.code}, Reason: '${event.reason}'`);
+            handleChatWebSocketDisconnect(); // 调用新的处理函数
+        };
+
+        chatSocket.onerror = (error) => {
+            console.error("聊天WebSocket 发生错误:", error);
+            if (chatSocket) chatSocket.close();
+        };
+    }
+
+
+    function handleFileOpenRequest(fileInfo) {
+        const { filename, download_token, format } = fileInfo;
+        const isMarkdown = filename.toLowerCase().endsWith('.md') || filename.toLowerCase().endsWith('.markdown');
+
+        // 检查文件是否已在打开的标签页中
+        if (appState.openFiles[filename]) {
+            console.log(`File ${filename} is already open. Switching to its tab.`);
+            viewFile(filename); // 切换到已有的标签页
+        } else {
+            // 如果文件未打开，则添加到状态并查看
+            console.log(`Opening new file: ${filename}`);
+            appState.openFiles[filename] = {
+                format: format,
+                token: download_token,
+                type: isMarkdown ? 'markdown' : 'iframe' // 增加类型区分
+            };
+            viewFile(filename);
+        }
+        // 无论文件是新打开还是已打开，都更新按钮状态
+        updateWorkdirButtonStates();
+    }
+
+    function updateWorkdirButtonStates() {
+        const openButtons = document.querySelectorAll('.workdir-action-btn.open-file-btn');
+        openButtons.forEach(button => {
+            const filePath = button.dataset.filepath;
+            if (appState.openFiles[filePath]) {
+                button.disabled = true;
+            } else {
+                button.disabled = false;
+            }
+        });
+    }
+
+    function handleDirectoryUpdate(payload) {
+        const pathElement = document.getElementById('workdir-path');
+        const listElement = document.getElementById('workdir-file-list');
+
+        if (!pathElement || !listElement) {
+            console.error('工作目录视图的必要元素未找到。');
+            return;
+        }
+
+        // 更新目录路径并显示视图
+        pathElement.textContent = '当前工作目录: ' + payload.directory;
+        showViewer('workdir');
+
+        // 清空旧的文件列表
+        listElement.innerHTML = '';
+
+        // 填充新的文件列表
+        if (payload.files && payload.files.length > 0) {
+            payload.files.forEach(file => {
+                const listItem = document.createElement('li');
+
+                const fileNameSpan = document.createElement('span');
+                fileNameSpan.className = 'file-name';
+
+                let displayPath = file.file_path;
+                const parts = displayPath.split('/');
+
+                // 检查路径是否至少有三个部分（例如 年份/项目名/文件名）
+                // 如果是，则移除前两个部分
+                if (parts.length > 2) {
+                    displayPath = parts.slice(2).join('/');
+                }
+
+                fileNameSpan.textContent = displayPath;
+                fileNameSpan.title = file.file_path; // 提示中仍显示完整路径
+
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'button-group';
+
+                const openButton = document.createElement('button');
+                openButton.textContent = '打开';
+                openButton.className = 'workdir-action-btn open-file-btn';
+                openButton.dataset.token = file.download_token;
+                openButton.dataset.format = file.format;
+                openButton.dataset.filepath = file.file_path;
+
+                const llmReadButton = document.createElement('button');
+                llmReadButton.textContent = 'LLM读取';
+                llmReadButton.className = 'workdir-action-btn llm-read-btn';
+                llmReadButton.dataset.filepath = file.file_path;
+
+                buttonGroup.appendChild(openButton);
+                buttonGroup.appendChild(llmReadButton);
+
+                listItem.appendChild(fileNameSpan);
+                listItem.appendChild(buttonGroup);
+                listElement.appendChild(listItem);
+            });
+        } else {
+            const emptyMessage = document.createElement('li');
+            emptyMessage.textContent = '目录为空或不包含文件。';
+            listElement.appendChild(emptyMessage);
+        }
+        // 渲染后，立即更新按钮状态
+        updateWorkdirButtonStates();
+    }
+
+
+    // --- Login Modal Logic ---
+    function initLoginModalDOM() {
+        loginModal = document.getElementById('login-modal');
+        closeModalButton = loginModal.querySelector('.close-modal-button');
+        modalLoginForm = document.getElementById('modal-login-form');
+        modalUsernameInput = document.getElementById('modal-username');
+        modalPasswordInput = document.getElementById('modal-password');
+        modalRememberCheckbox = document.getElementById('modal-remember');
+        modalErrorBox = loginModal.querySelector('.error-message');
+
+        closeModalButton.onclick = hideLoginModal;
+        modalLoginForm.addEventListener('submit', handleModalLoginSubmit);
+    }
+
+    // --- Upload Modal Logic (Dynamic Loading) ---
+    function initUploadModalDOM() {
+        uploadSpecModal = document.getElementById('upload-spec-modal');
+        if (!uploadSpecModal) return false;
+
+        closeUploadModalButton = document.getElementById('close-upload-modal-button');
+        uploadSpecForm = document.getElementById('upload-spec-form');
+        uploadCategoryInput = document.getElementById('upload-category');
+        uploadFilesInput = document.getElementById('upload-files');
+        uploadOverwriteCheckbox = document.getElementById('upload-overwrite');
+        uploadErrorBox = document.getElementById('upload-error-box');
+        uploadProgressArea = uploadSpecModal.querySelector('.progress-area');
+        uploadProgressBar = document.getElementById('upload-progress-bar');
+        uploadProgressText = document.getElementById('upload-progress-text');
+
+        const uploadTypeRadios = uploadSpecForm.querySelectorAll('input[name="upload_type"]');
+
+        function setUploadMode(isDir) {
+            if (isDir) {
+                uploadFilesInput.webkitdirectory = true;
+                uploadFilesInput.multiple = true;
+            } else {
+                uploadFilesInput.webkitdirectory = false;
+                uploadFilesInput.multiple = true; // 允许多文件上传
+            }
+        }
+
+        uploadTypeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                setUploadMode(e.target.value === 'directory');
+            });
+        });
+
+        // 初始化
+        setUploadMode(uploadSpecForm.querySelector('input[name="upload_type"]:checked').value === 'directory');
+
+        closeUploadModalButton.onclick = hideUploadModal;
+        uploadSpecForm.addEventListener('submit', (e) => handleUploadFormSubmit(e));
+
+        uploadSpecModal.addEventListener('click', (event) => {
+            if (event.target === uploadSpecModal) {
+                hideUploadModal();
+            }
+        });
+
+        return true;
+    }
+
+    async function showUploadModal() {
+        if (!appState.isLoggedIn) {
+            alert("请先登录再上传文件。");
+            showLoginModal();
+            return;
+        }
+
+        // Check if modal is already open or loaded
+        if (document.getElementById('upload-spec-modal')) {
+            uploadSpecModal.style.display = 'flex';
+            return;
+        }
+
+        try {
+            // Fetch form HTML and categories from the new unified endpoint
+            const response = await fetch('/api/upload-info');
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || `无法加载上传模块: ${response.statusText}`);
+            }
+            const data = await response.json();
+
+            // Inject the HTML into the container
+            const modalContainer = document.getElementById('upload-modal-container');
+            modalContainer.innerHTML = data.form_html;
+
+            // Initialize DOM elements and attach listeners
+            if (!initUploadModalDOM()) {
+                throw new Error("无法初始化上传模块的DOM元素。");
+            }
+
+            // Populate categories
+            const selectElement = document.getElementById('upload-category');
+            data.categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category;
+                option.textContent = category;
+                selectElement.appendChild(option);
+            });
+
+            // Finally, show the modal
+            uploadSpecModal.style.display = 'flex';
+
+        } catch (error) {
+            console.error('显示上传模块失败:', error);
+            alert(`错误: ${error.message}`);
+        }
+    }
+
+    function hideUploadModal() {
+        const modalContainer = document.getElementById('upload-modal-container');
+        // Instead of just hiding, we remove the content to ensure it's fresh next time
+        modalContainer.innerHTML = '';
+        // Reset variables to avoid stale references
+        uploadSpecModal = null;
+    }
+
+    async function handleUploadFormSubmit(event, isRetry = false) {
+        event.preventDefault();
+        if (!uploadSpecForm) return;
+
+        uploadErrorBox.textContent = '';
+        uploadProgressArea.style.display = 'block';
+        uploadProgressBar.style.width = '0%';
+        uploadProgressText.textContent = '准备上传...';
+
+        const formData = new FormData();
+        const files = uploadFilesInput.files;
+        const uploadType = uploadSpecForm.querySelector('input[name="upload_type"]:checked').value;
+        const forbiddenExtensions = ['.zip', '.rar'];
+
+        if (files.length === 0) {
+            uploadErrorBox.textContent = '请选择文件或目录。';
+            uploadProgressArea.style.display = 'none';
+            return;
+        }
+
+        // 前端文件类型校验
+        for (const file of files) {
+            const lowerCaseName = file.name.toLowerCase();
+            if (forbiddenExtensions.some(ext => lowerCaseName.endsWith(ext))) {
+                uploadErrorBox.textContent = `不允许上传压缩文件 (${file.name})。请解压后上传。`;
+                uploadProgressArea.style.display = 'none';
+                return;
+            }
+        }
+
+        let spec_name = '';
+        if (uploadType === 'directory') {
+            // 目录上传：spec_name 是根目录名
+            const firstPath = files[0].webkitRelativePath;
+            spec_name = firstPath.split('/')[0];
+        } else {
+            // 文件上传：spec_name 是第一个不含扩展名的文件名
+            const fileName = files[0].name;
+            spec_name = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+        }
+
+        // 根据您的新需求，如果上传的是md文件，则在spec_name后添加_md
+        if (files.length === 1 && files[0].name.toLowerCase().endsWith('.md')) {
+            spec_name += '_md';
+        }
+
+        formData.append('upload_type', uploadType); // 使用已在函数开头定义的 uploadType
+        formData.append('category', uploadCategoryInput.value);
+        formData.append('spec_name', spec_name);
+        if (uploadOverwriteCheckbox.checked || isRetry) {
+            formData.append('overwrite', 'true');
+        }
+
+        for (let i = 0; i < files.length; i++) {
+            formData.append('files', files[i]);
+            const path = files[i].webkitRelativePath || files[i].name;
+            formData.append('file_paths', path);
+        }
+
+        uploadProgressText.textContent = `正在上传 ${files.length} 个文件...`;
+
+        try {
+            const response = await fetch('/upload-directory/', {
+                method: 'POST',
+                body: formData,
+                // Note: Do not set Content-Type header for FormData, browser does it with boundary
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                uploadProgressBar.style.width = '100%';
+                uploadProgressText.textContent = '上传成功！';
+                setTimeout(() => {
+                    hideUploadModal();
+                    alert(`规程 '${uploadCategoryInput.value}/${uploadSpecNameInput.value}' 上传成功!`);
+                }, 1000);
+            } else if (response.status === 409 && result.exists) {
+                // 409 Conflict: Directory exists
+                uploadProgressArea.style.display = 'none';
+                // 使用更清晰的确认消息
+                const userConfirmed = confirm(result.message + "\n\n是否要覆盖已存在的内容？");
+                if (userConfirmed) {
+                    // Retry the submission with overwrite flag set
+                    handleUploadFormSubmit(event, true);
+                } else {
+                    uploadErrorBox.textContent = '上传已取消。';
+                }
+            } else {
+                // Other errors
+                throw new Error(result.detail || result.message || '未知错误');
+            }
+        } catch (error) {
+            console.error('上传失败:', error);
+            uploadErrorBox.textContent = `上传失败: ${error.message}`;
+            uploadProgressArea.style.display = 'none';
+        }
+    }
+
+    function showLoginModal() {
+        if (!loginModal) initLoginModalDOM(); // Initialize DOM elements if not already done
+        modalErrorBox.textContent = ''; // Clear previous errors
+        loginModal.style.display = 'flex'; // Use flex for centering
+        modalUsernameInput.focus();
+    }
+
+    function hideLoginModal() {
+        if (loginModal) loginModal.style.display = 'none';
+    }
+
+    async function handleModalLoginSubmit(event) {
+        event.preventDefault();
+        modalErrorBox.textContent = '';
+        const formData = new FormData(modalLoginForm);
+
+        try {
+            const response = await fetch('/login', { method: 'POST', body: formData });
+            const result = await response.json();
+
+            if (response.ok) {
+                hideLoginModal();
+                // Login successful, re-check status and initialize app parts
+                await checkLoginStatusAndInitialize(true); // Pass true to indicate this is after a login attempt
+            } else {
+                modalErrorBox.textContent = result.message || '登录失败，请重试。';
+            }
+        } catch (error) {
+            console.error('登录请求失败:', error);
+            modalErrorBox.textContent = '发生网络错误，请检查您的连接。';
+        }
+    }
+
+    // --- UI Update for Login Status ---
+    function updateLoginStatusUI(isLoggedIn) {
+        appState.isLoggedIn = isLoggedIn;
+        if (isLoggedIn) {
+            loginStatusIndicator.textContent = '（已登录）';
+            authButtonText.textContent = '登出';
+            authButton.href = '/logout'; // Standard logout link
+            authButton.classList.remove('login');
+            authButton.classList.add('logout');
+            authButton.onclick = async (e) => { // Handle logout click
+                e.preventDefault();
+                    const currentSessionId = appState.sessionId; // Store before clearing
+                    try {
+                        // 后端 /logout 是 GET 请求
+                        await fetch('/logout', { method: 'GET' });
+                    } catch (error) {
+                        console.error("Logout request failed:", error);
+                    } finally {
+                        appState.sessionId = null; // Clear session ID
+                        sessionStorage.removeItem('session_id');
+                        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                            chatSocket.close(1000, "User logged out");
+                        }
+                        chatSocket = null;
+                        updateLoginStatusUI(false); // Update UI to logged out state
+                        // showViewer('placeholder', '您已登出。请重新登录以继续。');
+                    // botui_messageWindow.innerHTML = ''; // Do not clear chat messages
+                    // botui_conversation_id = null; // Do not reset conversation
+                }
+            };
+        } else {
+            loginStatusIndicator.textContent = '（未登录）';
+            authButtonText.textContent = '登录';
+            authButton.href = 'javascript:void(0);'; // Prevent navigation
+            authButton.classList.remove('logout');
+            authButton.classList.add('login');
+            authButton.onclick = (e) => { // Show login modal on click
+                e.preventDefault();
+                showLoginModal();
+            };
+            // Content (tabs, iframe, chat) is NOT cleared immediately on logout or disconnect.
+            // It will be handled/cleared upon a new successful login or if explicitly cleared by other actions.
+            // appState.openFiles = {}; // Do not clear
+            // appState.activeFile = null; // Do not clear
+            // renderTabs(); // Do not clear tabs
+            // if (!fileViewerIframe.src.includes('about:blank')) fileViewerIframe.src = 'about:blank'; // Do not clear iframe
+            showViewer('placeholder', '请登录以使用我的工作台。'); // Placeholder can still update
+        }
+    }
+
+    // --- WebSocket Disconnect Handling for Chat Socket ---
+    function handleChatWebSocketDisconnect() {
+        console.warn("聊天WebSocket disconnected or failed to connect.");
+        if (chatSocket && (chatSocket.readyState === WebSocket.OPEN || chatSocket.readyState === WebSocket.CONNECTING)) {
+            try { chatSocket.close(); } catch(e) { console.warn("Error closing chatSocket:", e); }
+        }
+        chatSocket = null;
+
+        if (appState.isLoggedIn) {
+            if (chatWebsocketRetryCount < MAX_WEBSOCKET_RETRIES) {
+                chatWebsocketRetryCount++;
+                console.log(`Attempting to reconnect 聊天WebSocket (attempt ${chatWebsocketRetryCount}/${MAX_WEBSOCKET_RETRIES}) in ${WEBSOCKET_RETRY_INTERVAL / 1000} seconds...`);
+                clearTimeout(chatWebsocketRetryTimer);
+                chatWebsocketRetryTimer = setTimeout(connectChatWebSocket, WEBSOCKET_RETRY_INTERVAL);
+            } else {
+                console.error(`聊天WebSocket reconnection failed after ${MAX_WEBSOCKET_RETRIES} attempts.`);
+                botui_addMessage("与聊天服务器的连接已断开，聊天功能可能无法使用。您可以尝试刷新页面或稍后重试。", "bot");
+            }
+        } else {
+            console.log("聊天WebSocket not attempting reconnection as user is not logged in.");
+        }
+    }
+
+    // --- App Initialization (Revised) ---
+    async function checkLoginStatusAndInitialize(isAfterLoginAttempt = false) {
+        try {
+            const response = await fetch('/api/user/status');
+            if (response.ok) {
+                const userData = await response.json();
+                const previousSessionId = appState.sessionId;
+                sessionStorage.setItem('session_id', userData.session_id);
+                appState.sessionId = userData.session_id;
+                updateLoginStatusUI(true); // Set to logged-in state
+                hideLoginModal(); // 确保登录成功后模态框是隐藏的
+
+                if (isAfterLoginAttempt && previousSessionId && previousSessionId !== appState.sessionId) {
+                    // If logged in as a new/different user, clear old state
+                    console.log("New user session detected after login. Clearing previous state.");
+                    appState.openFiles = {};
+                    appState.activeFile = null;
+                    renderTabs();
+                    if (!fileViewerIframe.src.includes('about:blank')) fileViewerIframe.src = 'about:blank';
+                    botui_messageWindow.innerHTML = '';
+                    botui_conversation_id = null;
+                }
+
+                connectChatWebSocket();    // 连接聊天专用 WebSocket
+
+                if (isAfterLoginAttempt) { // If this was after a successful login
+                     showViewer('placeholder', '登录成功！我的工作台已就绪。');
+                }
+            } else if (response.status === 401) {
+                // 用户未登录或会话无效，恢复为UI更新和模态框逻辑
+                updateLoginStatusUI(false);
+                // 不再重定向，而是依赖UI提示用户登录
+            } else {
+                throw new Error(`获取用户状态失败: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('检查登录状态或初始化应用时出错:', error);
+            // 发生错误时，同样更新UI，而不是重定向
+            updateLoginStatusUI(false);
+            botui_addMessage(`无法连接到服务器进行状态检查: ${error.message}`, 'bot');
+        }
+
+        // Common initialization steps regardless of login status (e.g., loading non-user-specific resources)
+        // Get chatbot API config (moved here to run even if not initially logged in, though chat might be disabled)
+        try {
+            const agentApiResponse = await fetch('/api/dify-agent-api');
+            if (!agentApiResponse.ok) {
+                throw new Error(`获取聊天机器人配置失败: ${agentApiResponse.status} ${agentApiResponse.statusText}`);
+            }
+            const agentApiData = await agentApiResponse.json();
+            if (agentApiData.url && agentApiData.apikey) {
+                dynamic_bot_api_url = agentApiData.url;
+                dynamic_bot_api_key = agentApiData.apikey;
+                console.log("聊天机器人配置已加载:", dynamic_bot_api_url);
+            } else {
+                console.error('未能从API获取有效的聊天机器人URL或API Key。');
+                // Don't show placeholder error here if not logged in, as chat is likely disabled anyway
+            }
+        } catch (error) {
+            console.error('获取聊天机器人配置时出错:', error);
+        }
+
+        if (!isAfterLoginAttempt && !appState.isLoggedIn) {
+             showViewer('placeholder', '请登录以使用我的工作台。');
+        } else if (!isAfterLoginAttempt && appState.isLoggedIn) {
+             showViewer('placeholder', '我的工作台已就绪。');
+        }
+        // renderTabs(); // Already called in init
+    }
+
+    async function init() {
+        setTheme(getPreferredTheme());
+
+        // 为工作目录标签页按钮添加事件监听器
+        workdirTabButton.addEventListener('click', () => {
+            if (appState.activeView !== 'workdir') {
+                showViewer('workdir');
+            } else {
+                // 如果当前已是工作目录视图，则切换回默认占位符
+                showViewer('placeholder', '我的工作台已就绪。');
+            }
+        });
+
+        // 使用事件委托处理文件打开和LLM读取按钮的点击
+        document.addEventListener('click', function(event) {
+            const button = event.target;
+            if (button && button.classList.contains('open-file-btn')) {
+                const fileInfo = {
+                    filename: button.dataset.filepath, // 使用完整路径作为唯一标识
+                    download_token: button.dataset.token,
+                    format: button.dataset.format
+                };
+                handleFileOpenRequest(fileInfo);
+            } else if (button && button.classList.contains('llm-read-btn')) {
+                const filePath = button.dataset.filepath;
+                if (filePath) {
+                    const query = `请读取文件，路径是 ${filePath}`;
+                    // 直接调用聊天函数
+                    botui_addMessage(query, 'user');
+                    botui_streamMessageViaWebSocket(query);
+                }
+            }
+        });
+
+        // Create and append login modal to body before initializing DOM refs for it
+        const loginModalHTML = `
+        <div id="login-modal" class="login-modal">
+            <div class="login-modal-content">
+                <span class="close-modal-button">&times;</span>
+                <h1>工作台登录</h1>
+                <form id="modal-login-form">
+                    <div class="form-group">
+                        <label for="modal-username">用户名:</label>
+                        <input type="text" id="modal-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="modal-password">密码:</label>
+                        <input type="password" id="modal-password" name="password" required>
+                    </div>
+                    <div class="remember-group">
+                        <input type="checkbox" id="modal-remember" name="remember" value="true">
+                        <label for="modal-remember" style="margin-left: 8px; margin-bottom: 0;">记住我</label>
+                    </div>
+                    <button type="submit">登 录</button>
+                    <div class="error-message" id="modal-error-box"></div>
+                </form>
+            </div>
+        </div>`;
+        document.body.insertAdjacentHTML('beforeend', loginModalHTML);
+
+        initLoginModalDOM(); // Initialize static login modal DOM elements
+        uploadSpecButton.onclick = showUploadModal; // Attach listener to the static upload button
+        await checkLoginStatusAndInitialize();
+        renderTabs(); // Initial tab render
+    }
+
+    // --- ICONS from index4.html ---
+    window.ICONS = {
+        pdf: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/><path d="M4.603 14.087a.8.8 0 0 1-1.214-.886l.66-1.98a.52.52 0 0 1 .184-.282l.062-.052.062-.052a.5.5 0 0 1 .736.646l-.119.119a.11.11 0 0 0-.03.076l-.23.69zM5.53 12.042a.51.51 0 0 1 .707.707l-1.464 1.464a.51.51 0 0 1-.707-.707z"/></svg>`,
+        docx: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8.88 15.84c-.45.08-.91.16-1.38.16H2.5A1.5 1.5 0 0 1 1 14.5V3.5A1.5 1.5 0 0 1 2.5 2H10v2h2v1.5a.5.5 0 0 0 1 0V4h.5a.5.5 0 0 0 .29-.91L11.15.29a.5.5 0 0 0-.85.35V2.5A1.5 1.5 0 0 1 9 1H2.5A2.5 2.5 0 0 0 0 3.5v11A2.5 2.5 0 0 0 2.5 17h6.08c.55 0 1.07-.1 1.55-.27l.5-.27c.45-.25.85-.58 1.17-1a.5.5 0 0 0-.85-.52c-.25.3-.57.54-.9.74l-.5.27Z"/><path d="M16 12h-3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1m-3-2h3v1h-3z"/></svg>`,
+        xlsx: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.18 4.603L1.18 8.603h2.825L8 4.306zm3.593 0L5.18 10.297h2.825L12 5.006zM13.18 4.603L9.18 8.603h2.825L16 4.306zM13.18 10.297L9.18 14.297h2.825L16 9.006z"/><path d="M1.18 8.603a.5.5 0 0 0 .306.491l6.98 3.293a.5.5 0 0 0 .468 0l6.98-3.293a.5.5 0 0 0 .306-.491L9.18 1.497a.5.5 0 0 0-.468 0zM8.944 1.151l6.98 3.293L8.944 7.739 1.964 4.444zM1.964 9.098l6.98 3.293 6.98-3.293-6.98-3.294z"/></svg>`,
+        default: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zM4 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1z"/></svg>`
+    };
+
+    // --- JavaScript from botui.html (integrated and prefixed) ---
+    let dynamic_bot_api_url = null; // 将通过API获取
+    let dynamic_bot_api_key = null; // 将通过API获取
+
+    const botui_messageWindow = document.getElementById('message-window');
+    const botui_chatForm = document.getElementById('chat-form');
+    const botui_chatInput = document.getElementById('chat-input');
+    const botui_sendButton = document.getElementById('send-button'); // send-button ID was added in HTML
+    const botui_stopAIButton = document.getElementById('stop-ai-button'); // stop-ai-button ID was added in HTML
+    const botui_newChatButton = document.getElementById('new-chat-button');
+
+    let botui_conversation_id = null;
+    let current_task_id = null; // To store the current Dify task_id
+    let isStreaming = false; // 新增流式传输状态
+    let currentBotMessageElement = null; // Make this global for stop button logic and message appending
+
+    // botui.html's theme toggle JS logic is removed. index4.html's setTheme handles global theme.
+
+    function startNewConversation() {
+        botui_conversation_id = null;
+        botui_messageWindow.innerHTML = '';
+        botui_addMessage("新对话已开始。请输入您的问题。", "bot");
+        console.log("New conversation started. Conversation ID reset.");
+        botui_chatInput.focus();
+    }
+
+    botui_newChatButton.addEventListener('click', startNewConversation);
+
+    function botui_handleFormSubmission() {
+        const query = botui_chatInput.value.trim();
+        if (query) {
+            botui_addMessage(query, 'user');
+            current_task_id = null; // Reset task_id for new query
+            botui_stopAIButton.disabled = true; // Disable button
+            botui_sendButton.disabled = true; // 禁用发送按钮
+            botui_streamMessageViaWebSocket(query);
+            botui_chatInput.value = '';
+            botui_chatInput.style.height = 'auto';
+        }
+    }
+
+    botui_chatForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        botui_handleFormSubmission();
+    });
+
+    botui_stopAIButton.addEventListener('click', () => {
+        if (current_task_id && chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+            console.log(`Requesting to stop AI task: ${current_task_id}`);
+            console.log(`WebSocket state: ${chatSocket.readyState}`);
+            console.log(`WebSocket bufferedAmount: ${chatSocket.bufferedAmount}`);
+            isStreaming = false; // 立即停止前端渲染
+            chatSocket.send(JSON.stringify({
+                type: "stop_chat_stream",
+                task_id: current_task_id,
+                user: "user_001" // This should match the user ID sent in chat requests
+            }));
+            botui_stopAIButton.disabled = true; // Disable button after sending stop request
+            setTimeout(() => {
+                botui_addMessage('<i>正在尝试停止AI输出...</i>', 'bot');
+            }, 0);
+        } else {
+            console.warn("Cannot stop AI: No active task_id or WebSocket not open.");
+            // Button is already visible, ensure it's disabled if no task_id
+            if (!current_task_id) {
+                botui_stopAIButton.disabled = true;
+            }
+        }
+    });
+
+    botui_chatInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            botui_handleFormSubmission();
+        }
+    });
+
+    botui_chatInput.addEventListener('input', () => {
+        botui_chatInput.style.height = 'auto';
+        // Ensure scrollHeight is calculated correctly after content change
+        requestAnimationFrame(() => {
+             botui_chatInput.style.height = (botui_chatInput.scrollHeight) + 'px';
+        });
+    });
+
+    function botui_addMessage(content, type, referenceNode = null) {
+        const messageElement = document.createElement('div');
+        messageElement.className = `message ${type}-message`;
+        if (type === 'user') {
+            messageElement.textContent = content; // Use textContent for user messages to prevent XSS
+        } else {
+            messageElement.innerHTML = content;
+        }
+        if (referenceNode) {
+            botui_messageWindow.insertBefore(messageElement, referenceNode);
+        } else {
+            botui_messageWindow.appendChild(messageElement);
+        }
+        botui_scrollToBottom();
+        return messageElement;
+    }
+
+    function botui_addCollapsibleMessage(summaryText, contentText, referenceNode = null) {
+        if (!contentText) return;
+        const detailsElement = document.createElement('details');
+        detailsElement.className = 'message agent-thought';
+        const summaryElement = document.createElement('summary');
+        summaryElement.textContent = summaryText;
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'collapsible-content';
+        contentDiv.innerHTML = marked.parse(contentText);
+        detailsElement.appendChild(summaryElement);
+        detailsElement.appendChild(contentDiv);
+
+        // 确保在 finalize 之后，新的 collapsible message 被正确添加
+        // 如果 referenceNode 存在且仍在 DOM 中，则在其前插入
+        if (referenceNode && referenceNode.parentNode === botui_messageWindow) {
+            botui_messageWindow.insertBefore(detailsElement, referenceNode);
+        } else {
+            // 否则，直接追加到末尾
+            botui_messageWindow.appendChild(detailsElement);
+        }
+        setTimeout(botui_scrollToBottom, 0);
+    }
+
+    function botui_scrollToBottom() {
+        botui_messageWindow.scrollTop = botui_messageWindow.scrollHeight;
+    }
+
+    function botui_appendToCurrentBotMessage(textChunk) {
+        if (!isStreaming) return; // 如果已停止，则不处理
+        if (!currentBotMessageElement) {
+            const thinkingHTML = `<div class="thinking"><span></span><span></span><span></span></div>`;
+            currentBotMessageElement = botui_addMessage(thinkingHTML, 'bot');
+            currentBotMessageElement.dataset.fullText = ""; // 初始化完整文本
+        }
+
+        const thinkingIndicator = currentBotMessageElement.querySelector('.thinking');
+        if (thinkingIndicator) { // 首次接收到文本块时，移除loading动画
+            currentBotMessageElement.innerHTML = ''; // 清空loading
+        }
+
+        currentBotMessageElement.dataset.fullText += textChunk;
+        currentBotMessageElement.innerHTML = marked.parse(currentBotMessageElement.dataset.fullText);
+        botui_scrollToBottom();
+    }
+
+    function botui_getCurrentBotMessageElement() {
+        return currentBotMessageElement;
+    }
+
+    function botui_finalizeCurrentBotMessage() {
+        if (currentBotMessageElement && currentBotMessageElement.classList.contains('bot-message')) {
+            const thinkingIndicator = currentBotMessageElement.querySelector('.thinking');
+            // 如果消息元素仍然只包含 thinking 动画（即没有收到任何文本），
+            // 可以选择移除它或替换为一个“无回复”的提示。
+            if (thinkingIndicator && (!currentBotMessageElement.dataset.fullText || currentBotMessageElement.dataset.fullText.trim() === '')) {
+                 currentBotMessageElement.innerHTML = marked.parse("..."); // 或其他占位符，或移除
+            }
+        }
+        currentBotMessageElement = null; // 重置，以便下次创建新消息
+        botui_scrollToBottom();
+    }
+
+    async function botui_streamMessageViaWebSocket(query) {
+        if (!chatSocket || chatSocket.readyState !== WebSocket.OPEN) {
+            console.warn("聊天WebSocket未连接或未打开。尝试重新连接...");
+            botui_addMessage("与聊天服务器的连接已断开，正在尝试重新连接...", "bot");
+            // connectChatWebSocket(); // Let the existing onclose handler manage reconnections
+            // Instead of direct reconnect, inform user and rely on onclose handler
+            if (!chatWebsocketRetryTimer) { // Avoid queuing multiple reconnects if already trying
+                 handleChatWebSocketDisconnect(); // Trigger the standard reconnect procedure
+            }
+            // Provide feedback that message might not be sent immediately
+            botui_addMessage("连接问题，请稍后或消息发送成功后重试。", "bot");
+            botui_sendButton.disabled = false; // 如果websocket未连接，重新启用发送按钮
+            return;
+        }
+
+        isStreaming = true; // 开始流式传输
+        current_task_id = null; // Reset task_id for the new stream
+        botui_stopAIButton.disabled = true; // Ensure stop button is disabled at the start of a new stream
+
+
+        // Initialize a new bot message element for thinking animation and subsequent stream
+        const thinkingHTML = `<div class="thinking"><span></span><span></span><span></span></div>`;
+        currentBotMessageElement = botui_addMessage(thinkingHTML, 'bot'); // This is now a global var
+        currentBotMessageElement.dataset.fullText = ""; // Initialize
+
+        const payload = {
+            query: query,
+            user: "user_001", // 可以根据实际用户身份调整
+            conversation_id: botui_conversation_id || null,
+            inputs: {} // 其他可能的输入参数
+        };
+
+        try {
+            console.log("通过WebSocket发送聊天请求:", payload);
+            chatSocket.send(JSON.stringify(payload));
+        } catch (error) {
+            console.error("通过WebSocket发送消息失败:", error);
+            if (currentBotMessageElement) {
+                 currentBotMessageElement.innerHTML = marked.parse(`😥 **抱歉，发送消息时出错了**: \n\n\`\`\`\n${error.message}\n\`\`\``);
+            } else {
+                botui_addMessage(`😥 **抱歉，发送消息时出错了**: \n\n\`\`\`\n${error.message}\n\`\`\``, 'bot');
+            }
+            botui_finalizeCurrentBotMessage(); // 确保重置
+            botui_sendButton.disabled = false; // 发送失败时重新启用发送按钮
+        }
+        // 注意：WebSocket是异步的，消息的接收和处理在 chatSocket.onmessage 中进行
+    }
+    // --- End of JavaScript from botui.html ---
+
+    window.addEventListener('load', init);
+</script>
+</body>
+</html>

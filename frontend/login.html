@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 工作台</title>
+    <style>
+        :root { --primary-color: #007aff; --border-color: #dee2e6; }
+        body, html { height: 100%; margin: 0; font-family: system-ui, -apple-system, sans-serif; background-color: #f8f9fa; display: flex; justify-content: center; align-items: center; }
+        .login-container { background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 360px; text-align: center; }
+        h1 { margin-top: 0; color: #333; }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-weight: 500; color: #666; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 5px; box-sizing: border-box; }
+        .remember-group { display: flex; align-items: center; margin-bottom: 20px; }
+        button { width: 100%; padding: 12px; background-color: var(--primary-color); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; transition: background-color 0.2s; }
+        button:hover { background-color: #0056b3; }
+        .error-message { color: #d93025; margin-top: 15px; text-align: center; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h1>工作台</h1>
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">用户名:</label>
+                <input type="text" id="username" name="username" required value="admin">
+            </div>
+            <div class="form-group">
+                <label for="password">密码:</label>
+                <input type="password" id="password" name="password" required value="password">
+            </div>
+            <div class="remember-group">
+                <input type="checkbox" id="remember" name="remember" value="true">
+                <label for="remember" style="margin-left: 8px; margin-bottom: 0;">记住我</label>
+            </div>
+            <button type="submit">登 录</button>
+            <div id="error-box" class="error-message"></div>
+        </form>
+    </div>
+    <script>
+        const form = document.getElementById('login-form');
+        const errorBox = document.getElementById('error-box');
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            errorBox.textContent = '';
+
+            const formData = new FormData(form);
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    window.location.href = '/'; // 登录成功，跳转到主页
+                } else {
+                    errorBox.textContent = result.message || '登录失败，请重试。';
+                }
+            } catch (error) {
+                console.error('登录请求失败:', error);
+                errorBox.textContent = '发生网络错误，请检查您的连接。';
+            }
+        });
+    </script>
+</body>
+</html>

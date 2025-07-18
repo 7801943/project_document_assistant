@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>OnlyOffice 编辑器</title>
+  <!-- OnlyOffice API 将被动态加载 -->
+</head>
+<style>
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  #placeholder {
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+</style>
+<body>
+  <div id="placeholder" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0;"></div>
+
+  <script>
+    // 动态加载 OnlyOffice API
+    function loadOnlyOfficeApi() {
+      return new Promise((resolve, reject) => {
+        // 从 docker-compose.yml 我们知道端口是 8080
+        const onlyoffice_port = 8080;
+        const onlyoffice_host = window.location.hostname;
+        const onlyoffice_protocol = window.location.protocol;
+        // const apiUrl = `${onlyoffice_protocol}//${onlyoffice_host}:${onlyoffice_port}/web-apps/apps/api/documents/api.js`;
+
+        console.log(`正在从以下地址加载 OnlyOffice API: ${apiUrl}`);
+
+        const script = document.createElement("script");
+        script.src = apiUrl;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`无法加载 OnlyOffice API from ${apiUrl}`));
+        document.head.appendChild(script);
+      });
+    }
+
+    // 从 URL 查询参数中获取 JWT
+    function getQueryParam(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    async function initializeEditor() {
+      const jwtToken = getQueryParam("jwt");
+
+      if (!jwtToken) {
+        console.error("错误：URL中缺少JWT token。");
+        document.getElementById("placeholder").innerText = "错误：无法加载编辑器，缺少必要的配置信息。";
+        return;
+      }
+
+      try {
+        await loadOnlyOfficeApi();
+        console.log("OnlyOffice API 加载成功。");
+
+        // 后端已经将所有配置都打包到了JWT中
+        // api.js 会自动处理这个JWT token
+        const config = {
+          token: jwtToken
+        };
+
+        // 使用从后端获取的包含JWT的配置来初始化编辑器
+        const docEditor = new DocsAPI.DocEditor("placeholder", config);
+
+      } catch (error) {
+        console.error("初始化 OnlyOffice 编辑器失败:", error);
+        document.getElementById("placeholder").innerText = `错误: ${error.message}`;
+      }
+    }
+
+    initializeEditor();
+  </script>
+</body>
+</html>

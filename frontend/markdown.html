@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown 预览</title>
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --light-gray: #f8f9fa;
+            --border-color: #ced4da;
+            --text-color: #333;
+            --white-color: #fff;
+            --shadow-color: rgba(0,0,0,0.1);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
+            line-height: 1.7;
+            color: var(--text-color);
+            background-color: var(--light-gray);
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--white-color);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px var(--shadow-color);
+        }
+        .controls {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .view-source-btn {
+            padding: 5px 10px;
+            font-size: 14px;
+            color: #fff;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none; /* Make it look like a button */
+            display: inline-block;
+            transition: background-color 0.3s ease;
+        }
+        .view-source-btn:hover {
+            background-color: #0056b3;
+        }
+        #output h1, #output h2, #output h3, #output h4, #output h5, #output h6 {
+            font-family: "Noto Serif CJK SC", "Source Han Serif SC", "Source Han Serif CN", serif;
+            color: #1a1a1a;
+            line-height: 1.4;
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.3em;
+        }
+        #output h1 { font-size: 2.2em; text-align: center; border-bottom: 2px solid #333; }
+        #output p { margin-bottom: 1em; text-align: justify; }
+        #output table {
+            width: 100%; border-collapse: collapse; margin: 1.5em 0;
+            display: block; overflow-x: auto;
+        }
+        #output th, #output td { border: 1px solid #ccc; padding: 8px 12px; text-align: left; }
+        #output th { background-color: #f2f2f2; font-weight: bold; }
+        #output tr:nth-child(even) { background-color: #f9f9f9; }
+        #output img {
+            max-width: 100%; height: auto; display: block;
+            margin: 1em auto; border: 1px solid #ddd; padding: 4px; border-radius: 4px;
+        }
+        #output mjx-container { text-align: left !important; margin: 1em 0; }
+        .loading, .error { text-align: center; padding: 40px; font-size: 1.2em; color: #6c757d; }
+    </style>
+    <script>
+        MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']],
+            displayMath: [['$$', '$$'], ['\\[', '\\]']],
+            processEscapes: true
+          },
+          svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <script src="/static/marked.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <button id="toggle-view-btn" class="view-source-btn">查看源文件</button>
+        </div>
+        <div id="output">
+            <div class="loading">正在加载内容...</div>
+        </div>
+        <pre id="raw-view" style="display: none; white-space: pre-wrap; background: #f5f5f5; padding: 1em; border-radius: 5px;"></pre>
+    </div>
+
+    <script>
+        // 等待所有依赖库加载完成
+        function waitForLibraries(callback) {
+            const interval = setInterval(() => {
+                // 检查 marked 和 MathJax.typesetPromise 是否都已定义
+                if (window.marked && window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+                    clearInterval(interval);
+                    callback();
+                }
+            }, 100); // 每100毫秒检查一次
+        }
+
+    let showingRaw = false;  // 当前是否处于原文模式
+    let rawMarkdown = '';    // 存储加载的 Markdown 原文
+
+    async function renderPage() {
+        const outputDiv = document.getElementById('output');
+        const rawView = document.getElementById('raw-view');
+        const toggleBtn = document.getElementById('toggle-view-btn');
+
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const fileUrl = urlParams.get('fileUrl');
+
+            if (!fileUrl) {
+                throw new Error("URL中缺少 'fileUrl' 参数。");
+            }
+
+            const response = await fetch(fileUrl);
+            if (!response.ok) {
+                throw new Error(`无法获取文件内容 (状态: ${response.status})。`);
+            }
+
+            rawMarkdown = await response.text();
+
+            const processedText = rawMarkdown
+                .replace(/\\\(/g, '$')
+                .replace(/\\\)/g, '$')
+                .replace(/\\\[/g, '$$')
+                .replace(/\\\]/g, '$$');
+
+            outputDiv.innerHTML = marked.parse(processedText);
+            if (window.MathJax) {
+                MathJax.typesetPromise([outputDiv]).catch(err => {
+                    console.error('MathJax 渲染失败: ' + err.message);
+                });
+            }
+
+            toggleBtn.addEventListener('click', () => {
+                showingRaw = !showingRaw;
+                if (showingRaw) {
+                    rawView.textContent = rawMarkdown;
+                    rawView.style.display = 'block';
+                    outputDiv.style.display = 'none';
+                    toggleBtn.textContent = '查看渲染视图';
+                } else {
+                    rawView.style.display = 'none';
+                    outputDiv.style.display = 'block';
+                    toggleBtn.textContent = '查看源文件';
+                }
+            });
+
+        } catch (error) {
+            console.error('渲染Markdown时出错:', error);
+            outputDiv.innerHTML = `<div class="error">加载文件失败: ${error.message}</div>`;
+        }
+    }
+    </script>
+        <script>
+        // 页面加载完成后，等 marked 和 MathJax 加载完毕再执行 renderPage()
+        document.addEventListener('DOMContentLoaded', () => {
+            waitForLibraries(renderPage);
+        });
+    </script>
+</body>
+</html>

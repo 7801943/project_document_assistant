@@ -1,0 +1,363 @@
+<!-- <!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>OnlyOffice 编辑器测试页</title>
+  <script src="http://192.168.43.48:8080/web-apps/apps/api/documents/api.js"></script>
+  <style>
+    html, body, #placeholder {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body>
+  <div id="placeholder"></div>
+  <script>
+    const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb2N1bWVudCI6eyJmaWxlVHlwZSI6ImRvY3giLCJrZXkiOiIwZDBiMGQwZGY3MGI0ZDIwOThlNWJjNWY1ZTE2MTU2NV8xNzUyNzIwNjg0IiwidGl0bGUiOiJcdTRmMWFcdThiYWVcdTdlYWFcdTg5ODFfXHU2YzVmXHU4MmNmXHU4MmNmXHU1ZGRlXHU4MjM5XHU5NWY4MTEwXHU1MzQzXHU0ZjBmXHU1M2Q4XHU3NTM1XHU3YWQ5Mlx1NTNmNzNcdTUzZjdcdTRlM2JcdTUzZDhcdTYyNjlcdTVlZmFcdTVkZTVcdTdhMGIyMDI0LjcuMjMuZG9jeCIsInVybCI6Imh0dHA6Ly8xOTIuMTY4LjQzLjQ4Ojg4ODgvZG93bmxvYWQvMGQwYjBkMGRmNzBiNGQyMDk4ZTViYzVmNWUxNjE1NjUvJUU0JUJDJTlBJUU4JUFFJUFFJUU3JUJBJUFBJUU4JUE2JTgxXyVFNiVCMSU5RiVFOCU4QiU4RiVFOCU4QiU4RiVFNSVCNyU5RSVFOCU4OCVCOSVFOSU5NyVCODExMCVFNSU4RCU4MyVFNCVCQyU4RiVFNSU4RiU5OCVFNyU5NCVCNSVFNyVBQiU5OTIlRTUlOEYlQjczJUU1JThGJUI3JUU0JUI4JUJCJUU1JThGJTk4JUU2JTg5JUE5JUU1JUJCJUJBJUU1JUI3JUE1JUU3JUE4JThCMjAyNC43LjIzLmRvY3giLCJwZXJtaXNzaW9ucyI6eyJlZGl0Ijp0cnVlLCJkb3dubG9hZCI6dHJ1ZSwicHJpbnQiOnRydWV9fSwiZG9jdW1lbnRUeXBlIjoid29yZCIsImVkaXRvckNvbmZpZyI6eyJjYWxsYmFja1VybCI6Imh0dHA6Ly8xOTIuMTY4LjQzLjQ4Ojg4ODgvb25seW9mZmljZS9jYWxsYmFjaz9maWxlbmFtZT0lRTQlQkMlOUElRTglQUUlQUUlRTclQkElQUElRTglQTYlODFfJUU2JUIxJTlGJUU4JThCJThGJUU4JThCJThGJUU1JUI3JTlFJUU4JTg4JUI5JUU5JTk3JUI4MTEwJUU1JThEJTgzJUU0JUJDJThGJUU1JThGJTk4JUU3JTk0JUI1JUU3JUFCJTk5MiVFNSU4RiVCNzMlRTUlOEYlQjclRTQlQjglQkIlRTUlOEYlOTglRTYlODklQTklRTUlQkIlQkElRTUlQjclQTUlRTclQTglOEIyMDI0LjcuMjMuZG9jeCIsIm1vZGUiOiJlZGl0IiwibGFuZyI6InpoLUNOIiwidXNlciI6eyJpZCI6ImFkbWluIiwibmFtZSI6ImFkbWluIn0sImN1c3RvbWl6YXRpb24iOnsiZm9yY2VzYXZlIjp0cnVlfX0sImV4cCI6MTc1MjczMTQ4NH0.ttEfKgr82Jle0racel68BauvoRT9zZgKxLLap0rFyoM";
+    new DocsAPI.DocEditor("placeholder", {
+      token: jwt,
+      width: "100%",
+      height: "100%"
+    });
+  </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<title>OnlyOffice 编辑器调试版</title>
+<script src="http://192.168.43.48:8080/web-apps/apps/api/documents/api.js"></script>
+<style>
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+#placeholder {
+  height: 100%;
+  width: 100%;
+  border: 2px solid #ccc;
+  box-sizing: border-box;
+}
+
+#debug-info {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.8);
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  z-index: 9999;
+  max-width: 400px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+#network-tests {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #666;
+}
+
+.test-result {
+  margin: 5px 0;
+  padding: 2px 5px;
+  border-radius: 3px;
+}
+
+.test-success {
+  background: rgba(0, 255, 0, 0.2);
+}
+
+.test-error {
+  background: rgba(255, 0, 0, 0.2);
+}
+
+#loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  font-size: 18px;
+}
+</style>
+</head>
+<body>
+<div id="debug-info">
+  <div>状态: <span id="status">初始化中...</span></div>
+  <div>API加载: <span id="api-status">检查中...</span></div>
+  <div>时间: <span id="current-time"></span></div>
+  <div>Token过期: <span id="token-exp"></span></div>
+  
+  <div id="network-tests">
+    <div><strong>网络测试:</strong></div>
+    <div id="test-results"></div>
+  </div>
+</div>
+
+<div id="placeholder">
+  <div id="loading">
+    <div>OnlyOffice编辑器加载中...</div>
+    <div style="margin-top: 10px; font-size: 14px;">如果长时间无响应，请检查控制台错误信息</div>
+  </div>
+</div>
+
+<script>
+// 调试信息更新
+function updateDebugInfo() {
+  const now = new Date();
+  const currentTime = Math.floor(now.getTime() / 1000);
+  const tokenExp = 1752731484;
+  
+  document.getElementById('current-time').textContent = `${currentTime} (${now.toLocaleString()})`;
+  document.getElementById('token-exp').textContent = `${tokenExp} (${new Date(tokenExp * 1000).toLocaleString()})`;
+  
+  if (currentTime > tokenExp) {
+    document.getElementById('status').textContent = 'Token已过期！';
+    document.getElementById('status').style.color = 'red';
+  }
+}
+
+// 检查API是否加载
+function checkAPIStatus() {
+  if (typeof DocsAPI !== 'undefined') {
+    document.getElementById('api-status').textContent = '✓ 已加载';
+    document.getElementById('api-status').style.color = 'green';
+    return true;
+  } else {
+    document.getElementById('api-status').textContent = '✗ 未加载';
+    document.getElementById('api-status').style.color = 'red';
+    return false;
+  }
+}
+
+// 测试网络连接
+async function testNetworkConnections() {
+  const testResults = document.getElementById('test-results');
+  testResults.innerHTML = '<div>正在测试网络连接...</div>';
+  
+  const tests = [
+    {
+      name: 'Document Server Health',
+      url: 'http://192.168.43.48:8080/healthcheck'
+    },
+    {
+      name: 'API Script',
+      url: 'http://192.168.43.48:8080/web-apps/apps/api/documents/api.js'
+    },
+    {
+      name: 'Document URL',
+      url: 'http://192.168.43.48:8888/download/0d0b0d0df70b4d2098e5bc5f5e161565/%E4%BC%9A%E8%AE%AE%E7%BA%AA%E8%A6%81_%E6%B1%9F%E8%8B%8F%E8%8B%8F%E5%B7%9E%E8%88%B9%E9%97%B8110%E5%8D%83%E4%BC%8F%E5%8F%98%E7%94%B5%E7%AB%992%E5%8F%B73%E5%8F%B7%E4%B8%BB%E5%8F%98%E6%89%A9%E5%BB%BA%E5%B7%A5%E7%A8%8B2024.7.23.docx'
+    },
+    {
+      name: 'Callback URL Test',
+      url: 'http://192.168.43.48:8888/onlyoffice/callback'
+    }
+  ];
+  
+  testResults.innerHTML = '';
+  
+  for (const test of tests) {
+    const resultDiv = document.createElement('div');
+    resultDiv.className = 'test-result';
+    resultDiv.innerHTML = `${test.name}: 测试中...`;
+    testResults.appendChild(resultDiv);
+    
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+      
+      const response = await fetch(test.url, { 
+        method: 'HEAD',
+        signal: controller.signal,
+        mode: 'no-cors' // 避免CORS问题
+      });
+      
+      clearTimeout(timeoutId);
+      
+      resultDiv.className = 'test-result test-success';
+      resultDiv.innerHTML = `${test.name}: ✓ 连接成功`;
+      console.log(`${test.name}: 连接成功`);
+      
+    } catch (error) {
+      resultDiv.className = 'test-result test-error';
+      
+      if (error.name === 'AbortError') {
+        resultDiv.innerHTML = `${test.name}: ✗ 超时`;
+        console.error(`${test.name}: 连接超时`);
+      } else {
+        resultDiv.innerHTML = `${test.name}: ✗ ${error.message}`;
+        console.error(`${test.name} 连接失败:`, error);
+      }
+    }
+  }
+}
+
+// 解析JWT Token
+function parseJWT(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('JWT解析失败:', error);
+    return null;
+  }
+}
+
+// 创建简化的测试配置
+function createSimpleTestConfig() {
+  return {
+    documentType: "word",
+    document: {
+      fileType: "docx",
+      key: "test-key-" + Date.now(),
+      title: "Test Document",
+      url: "http://192.168.43.48:8888/download/0d0b0d0df70b4d2098e5bc5f5e161565/%E4%BC%9A%E8%AE%AE%E7%BA%AA%E8%A6%81_%E6%B1%9F%E8%8B%8F%E8%8B%8F%E5%B7%9E%E8%88%B9%E9%97%B8110%E5%8D%83%E4%BC%8F%E5%8F%98%E7%94%B5%E7%AB%992%E5%8F%B73%E5%8F%B7%E4%B8%BB%E5%8F%98%E6%89%A9%E5%BB%BA%E5%B7%A5%E7%A8%8B2024.7.23.docx",
+      permissions: {
+        edit: true,
+        download: true,
+        print: true
+      }
+    },
+    editorConfig: {
+      mode: "edit",
+      lang: "zh-CN",
+      user: {
+        id: "admin",
+        name: "admin"
+      }
+    },
+    width: "100%",
+    height: "100%"
+  };
+}
+
+// 初始化编辑器
+async function initEditor() {
+  if (!checkAPIStatus()) {
+    setTimeout(initEditor, 500);
+    return;
+  }
+  
+  document.getElementById('status').textContent = '正在测试网络连接...';
+  
+  // 先测试网络连接
+  await testNetworkConnections();
+  
+  document.getElementById('status').textContent = '正在初始化编辑器...';
+  
+  try {
+    const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb2N1bWVudCI6eyJmaWxlVHlwZSI6ImRvY3giLCJrZXkiOiIwZDBiMGQwZGY3MGI0ZDIwOThlNWJjNWY1ZTE2MTU2NV8xNzUyNzIwNjg0IiwidGl0bGUiOiJcdTRmMWFcdThiYWVcdTdlYWFcdTg5ODFfXHU2YzVmXHU4MmNmXHU4MmNmXHU1ZGRlXHU4MjM5XHU5NWY4MTEwXHU1MzQzXHU0ZjBmXHU1M2Q4XHU3NTM1XHU3YWQ5Mlx1NTNmNzNcdTUzZjdcdTRlM2JcdTUzZDhcdTYyNjlcdTVlZmFcdTVkZTVcdTdhMGIyMDI0LjcuMjMuZG9jeCIsInVybCI6Imh0dHA6Ly8xOTIuMTY4LjQzLjQ4Ojg4ODgvZG93bmxvYWQvMGQwYjBkMGRmNzBiNGQyMDk4ZTViYzVmNWUxNjE1NjUvJUU0JUJDJTlBJUU4JUFFJUFFJUU3JUJBJUFBJUU4JUE2JTgxXyVFNiVCMSU5RiVFOCU4QiU4RiVFOCU4QiU4RiVFNSVCNyU5RSVFOCU4OCVCOSVFOSU5NyVCODExMCVFNSU4RCU4MyVFNCVCQyU4RiVFNSU4RiU5OCVFNyU5NCVCNSVFNyVBQiU5OTIlRTUlOEYlQjczJUU1JThGJUI3JUU0JUI4JUJCJUU1JThGJTk4JUU2JTg5JUE5JUU1JUJCJUJBJUU1JUI3JUE1JUU3JUE4JThCMjAyNC43LjIzLmRvY3giLCJwZXJtaXNzaW9ucyI6eyJlZGl0Ijp0cnVlLCJkb3dubG9hZCI6dHJ1ZSwicHJpbnQiOnRydWV9fSwiZG9jdW1lbnRUeXBlIjoid29yZCIsImVkaXRvckNvbmZpZyI6eyJjYWxsYmFja1VybCI6Imh0dHA6Ly8xOTIuMTY4LjQzLjQ4Ojg4ODgvb25seW9mZmljZS9jYWxsYmFjaz9maWxlbmFtZT0lRTQlQkMlOUElRTglQUUlQUUlRTclQkElQUElRTglQTYlODFfJUU2JUIxJTlGJUU4JThCJThGJUU4JThCJThGJUU1JUI3JTlFJUU4JTg4JUI5JUU5JTk3JUI4MTEwJUU1JThEJTgzJUU0JUJDJThGJUU1JThGJTk4JUU3JTk0JUI1JUU3JUFCJTk5MiVFNSU4RiVCNzMlRTUlOEYlQjclRTQlQjglQkIlRTUlOEYlOTglRTYlODklQTklRTUlQkIlQkElRTUlQjclQTUlRTclQTglOEIyMDI0LjcuMjMuZG9jeCIsIm1vZGUiOiJlZGl0IiwibGFuZyI6InpoLUNOIiwidXNlciI6eyJpZCI6ImFkbWluIiwibmFtZSI6ImFkbWluIn0sImN1c3RvbWl6YXRpb24iOnsiZm9yY2VzYXZlIjp0cnVlfX0sImV4cCI6MTc1MjczMTQ4NH0.ttEfKgr82Jle0racel68BauvoRT9zZgKxLLap0rFyoM";
+    
+    // 解析JWT内容
+    const payload = parseJWT(jwt);
+    if (payload) {
+      console.log('JWT内容:', payload);
+    }
+    
+    // 超时处理
+    const timeoutId = setTimeout(() => {
+      document.getElementById('status').textContent = '✗ 初始化超时 - 尝试简化配置';
+      document.getElementById('status').style.color = 'red';
+      
+      // 尝试使用简化配置
+      trySimpleConfig();
+    }, 30000); // 30秒超时
+    
+    console.log('开始初始化OnlyOffice编辑器...');
+    
+    const docEditor = new DocsAPI.DocEditor("placeholder", {
+      token: jwt,
+      width: "100%",
+      height: "100%",
+      events: {
+        onDocumentReady: function() {
+          clearTimeout(timeoutId);
+          document.getElementById('status').textContent = '✓ 文档已就绪';
+          document.getElementById('status').style.color = 'green';
+          document.getElementById('loading').style.display = 'none';
+          console.log('文档就绪');
+        },
+        onError: function(event) {
+          clearTimeout(timeoutId);
+          document.getElementById('status').textContent = '✗ 错误: ' + JSON.stringify(event);
+          document.getElementById('status').style.color = 'red';
+          console.error('OnlyOffice Error:', event);
+        },
+        onWarning: function(event) {
+          console.warn('OnlyOffice Warning:', event);
+        },
+        onAppReady: function() {
+          console.log('OnlyOffice App Ready');
+          document.getElementById('status').textContent = '应用已就绪，等待文档...';
+        },
+        onDocumentStateChange: function(event) {
+          console.log('Document State Change:', event);
+        },
+        onRequestEditRights: function() {
+          console.log('Request Edit Rights');
+        }
+      }
+    });
+    
+    console.log('DocEditor initialized:', docEditor);
+    
+  } catch (error) {
+    document.getElementById('status').textContent = '✗ 初始化失败: ' + error.message;
+    document.getElementById('status').style.color = 'red';
+    console.error('Initialization error:', error);
+  }
+}
+
+// 尝试简化配置
+function trySimpleConfig() {
+  console.log('尝试使用简化配置...');
+  
+  try {
+    const config = createSimpleTestConfig();
+    console.log('简化配置:', config);
+    
+    const docEditor = new DocsAPI.DocEditor("placeholder", config);
+    console.log('简化版DocEditor initialized:', docEditor);
+    
+  } catch (error) {
+    console.error('简化配置也失败:', error);
+    document.getElementById('status').textContent = '✗ 简化配置也失败: ' + error.message;
+  }
+}
+
+// 页面加载完成后初始化
+window.addEventListener('load', function() {
+  updateDebugInfo();
+  setInterval(updateDebugInfo, 5000); // 每5秒更新一次时间信息
+  
+  // 延迟初始化，确保API完全加载
+  setTimeout(initEditor, 1000);
+});
+
+// 捕获所有错误
+window.addEventListener('error', function(event) {
+  console.error('Global error:', event);
+  document.getElementById('status').textContent = '✗ 页面错误: ' + event.message;
+  document.getElementById('status').style.color = 'red';
+});
+</script>
+</body>
+</html>

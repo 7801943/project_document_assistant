@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能文档中心</title>
+    
+    <!-- Rendering Libraries removed for kkFileView integration -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/js-base64@3.6.0/base64.min.js"></script>
+
+    <style>
+        :root, html[data-theme='light'] {
+            --primary-color: #0d6efd;
+            --bg-color: #f8f9fa;
+            --rgb-bg-color: 248, 249, 250;
+            --panel-color: #ffffff;
+            --rgb-panel-color: 255, 255, 255;
+            --border-color: #dee2e6;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
+            --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --header-height: 60px;
+            
+            /* PDF.js viewer variables override */
+            --sidebar-width: 250px;
+            --toolbar-bg-color: var(--panel-color);
+            --toolbar-border-color: var(--border-color);
+            --body-bg-color: var(--bg-color);
+            --page-bg-color: var(--panel-color);
+            --main-color: var(--text-primary);
+            --sidebar-toolbar-bg-color: var(--bg-color);
+            --doorhanger-bg-color: var(--panel-color);
+            --doorhanger-border-color: var(--border-color);
+            --field-bg-color: var(--bg-color);
+            --field-border-color: var(--border-color);
+            --toggled-btn-bg-color: var(--primary-color);
+        }
+        html[data-theme='dark'] {
+            --primary-color: #0d6efd;
+            --bg-color: #121212;
+            --rgb-bg-color: 18, 18, 18;
+            --panel-color: #1e1e1e;
+            --rgb-panel-color: 30, 30, 30;
+            --border-color: #343a40;
+            --text-primary: #e9ecef;
+            --text-secondary: #adb5bd;
+            --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.15);
+
+            /* PDF.js viewer variables override */
+            --toolbar-bg-color: var(--panel-color);
+            --toolbar-border-color: var(--border-color);
+            --body-bg-color: var(--bg-color);
+            --page-bg-color: var(--panel-color);
+            --main-color: var(--text-primary);
+            --sidebar-toolbar-bg-color: var(--bg-color);
+            --doorhanger-bg-color: var(--panel-color);
+            --doorhanger-border-color: var(--border-color);
+            --field-bg-color: var(--bg-color);
+            --field-border-color: var(--border-color);
+            --toggled-btn-bg-color: var(--primary-color);
+        }
+        body, html {
+            margin: 0; padding: 0; height: 100vh; width: 100vw;
+            font-family: "Inter", "Segoe UI", "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        .app-wrapper { display: flex; flex-direction: column; height: 100%; }
+        .app-header {
+            display: flex; justify-content: space-between; align-items: center;
+            height: var(--header-height); padding: 0 24px;
+            background-color: var(--panel-color);
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0; transition: background-color 0.3s, border-color 0.3s;
+        }
+        .app-header .title { font-size: 1.25rem; font-weight: 600; }
+        .header-actions { display: flex; align-items: center; gap: 16px; }
+        .theme-toggle-button {
+            background: none; border: 1px solid var(--border-color); color: var(--text-secondary);
+            width: 38px; height: 38px; border-radius: 6px; cursor: pointer;
+            display: flex; justify-content: center; align-items: center;
+            transition: all 0.2s ease;
+        }
+        .theme-toggle-button:hover { background-color: var(--bg-color); color: var(--primary-color); }
+        .theme-toggle-button .moon-icon { display: none; }
+        html[data-theme='dark'] .theme-toggle-button .sun-icon { display: none; }
+        html[data-theme='dark'] .theme-toggle-button .moon-icon { display: block; }
+        
+        .logout-button {
+            display: flex; align-items: center; gap: 8px; padding: 8px 16px;
+            color: var(--text-secondary); background-color: transparent;
+            border: 1px solid var(--border-color); border-radius: 6px;
+            text-decoration: none; font-weight: 500; transition: all 0.2s ease;
+        }
+        .logout-button:hover { background-color: var(--bg-color); color: var(--primary-color); }
+
+        .main-container { display: flex; height: calc(100vh - var(--header-height)); }
+        .left-panel {
+            flex: 0 0 65%; display: flex; flex-direction: column;
+            background-color: var(--panel-color);
+            border-right: 1px solid var(--border-color);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .right-panel { flex: 1 1 auto; display: flex; }
+        .tab-navigation {
+            display: flex; flex-shrink: 0; overflow-x: auto;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 16px; background-color: var(--panel-color);
+        }
+        .tab-button {
+            display: flex; align-items: center; flex-shrink: 0; gap: 8px; padding: 12px 16px;
+            cursor: pointer; border: none; border-bottom: 3px solid transparent; background-color: transparent;
+            font-size: 15px; color: var(--text-secondary); transition: all 0.2s;
+        }
+        .tab-button:hover { color: var(--primary-color); }
+        .tab-button.active { color: var(--primary-color); border-bottom-color: var(--primary-color); font-weight: 600; }
+        .close-tab {
+            margin-left: 10px; border-radius: 50%; width: 20px; height: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; line-height: 1; transition: background-color 0.2s;
+        }
+        html[data-theme='light'] .close-tab:hover { background-color: #e9ecef; }
+        html[data-theme='dark'] .close-tab:hover { background-color: #343a40; }
+        
+        .content-viewer { flex-grow: 1; position: relative; overflow: hidden; background-color: var(--bg-color); }
+        #chatbot-iframe { width: 100%; height: 100%; border: none; background-color: var(--panel-color); }
+        .placeholder { display: flex; justify-content: center; align-items: center; height: 100%; color: var(--text-secondary); flex-direction: column; gap: 10px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="app-wrapper">
+        <header class="app-header">
+            <div class="title">智能文档中心</div>
+            <div class="header-actions">
+                <button id="theme-toggle" class="theme-toggle-button" title="切换主题">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m-4.646.354a.5.5 0 0 1-.708 0l-1.414-1.414a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708m9.193 0a.5.5 0 0 1 0-.708l1.414-1.414a.5.5 0 0 1 .708.707l-1.414 1.414a.5.5 0 0 1-.708 0m-9.193-9.193a.5.5 0 0 1-.708-.707l1.414-1.414a.5.5 0 1 1 .707.707L3.354 5.354a.5.5 0 0 1 0-.708M13.646 5.354a.5.5 0 0 1 0 .707L12.232 7.5a.5.5 0 0 1-.707-.707L13.646 5.354a.5.5 0 0 1 .708 0M1.5 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1.5 8m13 0a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5"/></svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+                </button>
+                <a href="/logout" class="logout-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/></svg>
+                    <span>登出</span>
+                </a>
+            </div>
+        </header>
+        <main class="main-container">
+            <div class="left-panel">
+                <nav class="tab-navigation" id="tab-container"></nav>
+                <div class="content-viewer">
+                    <div id="placeholder" class="placeholder" style="display: flex; width: 100%; height: 100%;"><span>请选择一个文件进行预览</span></div>
+                    <iframe id="file-viewer-iframe" style="display: none; width: 100%; height: 100%; border: none;"></iframe>
+                </div>
+            </div>
+            <div class="right-panel">
+                <iframe id="chatbot-iframe" src="" allow="microphone" title="AI Chatbot"></iframe>
+            </div>
+        </main>
+    </div>
+
+<script>
+    // --- Global State & DOM Refs ---
+    const appState = {
+        openFiles: {}, // { filename: { format, token } }
+        activeFile: null,
+        sessionId: null,
+    };
+    const chatbotIframe = document.getElementById('chatbot-iframe');
+    const tabContainer = document.getElementById('tab-container');
+    const placeholder = document.getElementById('placeholder');
+    const fileViewerIframe = document.getElementById('file-viewer-iframe');
+    let socket = null;
+
+    // --- Theme Management ---
+    const themeToggle = document.getElementById('theme-toggle');
+    const getPreferredTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const setTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    };
+    
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    });
+
+    // --- Viewer Logic ---
+    function showViewer(type, message) {
+        placeholder.style.display = type === 'placeholder' ? 'flex' : 'none';
+        fileViewerIframe.style.display = type === 'iframe' ? 'block' : 'none';
+        if (type === 'placeholder') {
+            placeholder.querySelector('span').textContent = message;
+        }
+    }
+
+    function viewFile(filename) {
+        const file = appState.openFiles[filename];
+        if (!file) {
+            console.error(`Attempting to view a non-existent file: ${filename}`);
+            showViewer('placeholder', `无法找到文件 ${filename} 的数据。`);
+            return;
+        }
+        
+        appState.activeFile = filename;
+        renderTabs();
+        showViewer('placeholder', `正在加载 ${filename}...`);
+
+    try {
+        const originUrl = `http://host.docker.internal:8888/download/${file.token}`;
+        const previewUrl = `${originUrl}&fullfilename=${filename}`;
+        
+        // 使用 kkFileView 文档推荐的方式
+        const kkFileViewUrl = 'http://127.0.0.1:8012/onlinePreview?url=' + encodeURIComponent(Base64.encode(previewUrl));
+
+        fileViewerIframe.src = kkFileViewUrl;
+        showViewer('iframe');
+
+    } catch (error) {
+        console.error(`Error rendering file "${filename}":`, error);
+        showViewer('placeholder', `加载文件 "${filename}" 出错: ${error.message}`);
+    }
+}
+
+    // --- Tab Management Logic ---
+    function renderTabs() {
+        tabContainer.innerHTML = '';
+        const openFilenames = Object.keys(appState.openFiles);
+
+        openFilenames.forEach(filename => {
+            const file = appState.openFiles[filename];
+            const button = document.createElement('button');
+            button.className = 'tab-button';
+            button.dataset.filename = filename;
+            if (filename === appState.activeFile) button.classList.add('active');
+            
+            const icon = window.ICONS[file.format] || window.ICONS.default;
+            button.innerHTML = `${icon}<span>${filename}</span><span class="close-tab" title="关闭标签页">&times;</span>`;
+            
+            button.addEventListener('click', (e) => {
+                if (e.target.classList.contains('close-tab')) return;
+                viewFile(filename);
+            });
+
+            button.querySelector('.close-tab').addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeTab(filename);
+            });
+            tabContainer.appendChild(button);
+        });
+
+        const activeTab = tabContainer.querySelector('.active');
+        if (activeTab) {
+            activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+    
+    function closeTab(filename) {
+        if (appState.openFiles[filename]) {
+            delete appState.openFiles[filename];
+            
+            if (appState.activeFile === filename) {
+                const remainingFiles = Object.keys(appState.openFiles);
+                if (remainingFiles.length > 0) {
+                    const newActiveFile = remainingFiles[remainingFiles.length - 1];
+                    viewFile(newActiveFile);
+                } else {
+                    appState.activeFile = null;
+                    showViewer('placeholder', '所有文件都已关闭。');
+                }
+            }
+            renderTabs();
+        }
+    }
+
+    // --- WebSocket Logic ---
+    function connectWebSocket() {
+        if (!appState.sessionId) {
+            console.error("无法连接WebSocket：缺少session_id。");
+            return;
+        }
+        
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws?session_id=${appState.sessionId}`;
+        
+        console.log(`正在连接到 WebSocket: ${wsUrl}`);
+        socket = new WebSocket(wsUrl);
+
+        socket.onopen = () => { console.log("WebSocket 连接已建立。"); };
+
+        socket.onmessage = (event) => {
+            console.log("收到WebSocket消息:", event.data);
+            try {
+                const message = JSON.parse(event.data);
+                if (message.type === 'file_open_request' && message.payload) {
+                    handleFileOpenRequest(message.payload);
+                }
+            } catch (e) {
+                console.error("处理WebSocket消息时出错:", e);
+            }
+        };
+
+        socket.onclose = (event) => {
+            console.warn(`WebSocket 连接已关闭。代码: ${event.code}, 原因: ${event.reason}`);
+            setTimeout(connectWebSocket, 5000); // 尝试重连
+        };
+
+        socket.onerror = (error) => {
+            console.error("WebSocket 发生错误:", error);
+            socket.close();
+        };
+    }
+
+    function handleFileOpenRequest(fileInfo) {
+        const { filename, download_token, format } = fileInfo;
+        
+        if (appState.openFiles[filename]) {
+            viewFile(filename);
+            return;
+        }
+
+        appState.openFiles[filename] = {
+            format: format,
+            token: download_token
+        };
+        
+        viewFile(filename);
+    }
+    
+    // --- App Initialization ---
+    async function init() {
+        setTheme(getPreferredTheme());
+        
+        try {
+            const response = await fetch('/api/user/status');
+            if (response.status === 401) {
+                window.location.href = '/static/login.html';
+                return;
+            }
+            const userData = await response.json();
+            sessionStorage.setItem('session_id', userData.session_id);
+            appState.sessionId = userData.session_id;
+
+            connectWebSocket(); 
+
+            const chatbotUrlResponse = await fetch('/api/chatbot-url');
+            if (!chatbotUrlResponse.ok) {
+                throw new Error(`获取聊天机器人URL失败: ${chatbotUrlResponse.statusText}`);
+            }
+            const chatbotData = await chatbotUrlResponse.json();
+            if (chatbotData.url) {
+                chatbotIframe.src = chatbotData.url;
+            } else {
+                console.error('未能从API获取有效的聊天机器人URL。');
+            }
+
+            showViewer('placeholder', '智能文档中心已就绪。');
+            renderTabs();
+
+        } catch (error) {
+            console.error('初始化应用失败:', error);
+            showViewer('placeholder', `初始化失败: ${error.message}`);
+            setTimeout(() => { window.location.href = '/static/login.html'; }, 2000);
+        }
+    }
+    
+    // --- ICONS ---
+    window.ICONS = {
+        pdf: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/><path d="M4.603 14.087a.8.8 0 0 1-1.214-.886l.66-1.98a.52.52 0 0 1 .184-.282l.062-.052.062-.052a.5.5 0 0 1 .736.646l-.119.119a.11.11 0 0 0-.03.076l-.23.69zM5.53 12.042a.51.51 0 0 1 .707.707l-1.464 1.464a.51.51 0 0 1-.707-.707z"/></svg>`,
+        docx: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8.88 15.84c-.45.08-.91.16-1.38.16H2.5A1.5 1.5 0 0 1 1 14.5V3.5A1.5 1.5 0 0 1 2.5 2H10v2h2v1.5a.5.5 0 0 0 1 0V4h.5a.5.5 0 0 0 .29-.91L11.15.29a.5.5 0 0 0-.85.35V2.5A1.5 1.5 0 0 1 9 1H2.5A2.5 2.5 0 0 0 0 3.5v11A2.5 2.5 0 0 0 2.5 17h6.08c.55 0 1.07-.1 1.55-.27l.5-.27c.45-.25.85-.58 1.17-1a.5.5 0 0 0-.85-.52c-.25.3-.57.54-.9.74l-.5.27Z"/><path d="M16 12h-3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1m-3-2h3v1h-3z"/></svg>`,
+        xlsx: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.18 4.603L1.18 8.603h2.825L8 4.306zm3.593 0L5.18 10.297h2.825L12 5.006zM13.18 4.603L9.18 8.603h2.825L16 4.306zM13.18 10.297L9.18 14.297h2.825L16 9.006z"/><path d="M1.18 8.603a.5.5 0 0 0 .306.491l6.98 3.293a.5.5 0 0 0 .468 0l6.98-3.293a.5.5 0 0 0 .306-.491L9.18 1.497a.5.5 0 0 0-.468 0zM8.944 1.151l6.98 3.293L8.944 7.739 1.964 4.444zM1.964 9.098l6.98 3.293 6.98-3.293-6.98-3.294z"/></svg>`,
+        default: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zM4 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1z"/></svg>`
+    };
+
+    window.addEventListener('load', init);
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+另外，研究下不获取ip地址的可行性，是否可以提供一个端点的相对路径，由web客户端进行处理，因为这个文件下载端点是同一个fastapi服务器的端点
+
+我的docker中 运行的dify，其中有个工具需要访问宿主机的8000端口，也就是本fastapi应用，使用的是 host.docker.internal：8000来访问，现在似乎访问不了了
+
+很好，现在代码似乎初步的能工作了，但是还有几个问题，1. 左侧的推送的内容显示在左下角一个小窗口中，太小了，请修复。请结合2，将整个左边的区域作为一个tab容器，显示多个文件的预览2. 我想更改文件的预览方式，不使用推送文件的内容的方式，而仅仅是推送一个下载端点，我希望前端通过这个端点访问服务器端，并利用docx-preview.js和xlsx.full.min.js在前端自己解析文件，同时，要维护多个文件的端点链接，请采用合适方案完成这个需求。总结一下，我的目的是，每一次当LLM调用服务器端的mcp工具如read_project_file时，都向前端发送一个文件的链接，让前端同步的打开这个文件。让llm的上下文和前端用户的上下文保持一致。
+
+检查 server_v3.py 以及 frontend/index1.html,目前，当LLM调用服务器端的mcp工具如read_project_file时，都向前端发送一个文件的链接，让前端同步的打开这个文件。这个功能已经实现，但存在一个问题，当文件是pdf文件时，似乎浏览器会跳出下载链接，而不是在前端页面渲染，是否需要考虑采用PDF.js来解决这个问题，请解决，此外我已经在read_project_file增加了读取文件内容以及增加下载链接并输出的代码，请检查。最后，综合前端的index1.html和后端的sever_v3.py ，检查是否存在无用的fastapi端点，将其注释掉。
+
+你理解错误了我的需求，read_project_file，我需要保留读取文件内容以及增加下载链接并返回的代码，这个函数是作为mcp工具将输出内容交给LLM的，同时，向前端推送文件下载端点也需要保留，因为我需要前端用户看到的文件和LLM看到的上下文是一致的，修改。
+
+帮我检查https://mozilla.github.io/pdf.js/web/viewer.html 这个网页，将这个网页的源代码应用于我的frontend/index1.html中的pdf渲染部分。
+
+检查 server_v4.py和Index.html，考虑规划下以下几个方面的调整
+
+1. 小心，仔细的检查server_v4.py，我需要对所有的文件读取逻辑进行调整，我计划调整get_file_content函数签名，将file_path由绝对路径调整为相对路径，
+包括数据库中存储的路径。帮助我处理收到影响的代码，注意这个调整影响到的函数很多，小心处理。
+2.检查我的计划，考虑引入APScheduler，在服务启动时，增加一个定时任务，这个任务可用来清理会话信息，定时执行扫描文件夹任务等。同时，使用现有的session机制，维护一个用户会话期间的全局token，这个token可以用于文件下载，或者其他用途，结合2，在用户登录分配，
+在用户登出时注销，当websocket中断一定时间后清理token，以便让用户重新登录。这两个计划有没有问题或明显的缺陷。
+4. 结合session机制和token，维护一个用户工作区的数据结构，这个数据结构记录（1）工作区的文件路径信息（结合1，是相对路径，
+当query_project_file_path这个mcp工具被调用后，且获取到唯一的查询结果后，将该结果的目录中的所有文件更新进入这个数据结构）
+记录（2）当前用户打开的文件标志，以及通过read_project_file mcp工具，由LLM打开的文件标志。这个用户工作区数据结构生存期与会话期token相同，
+合适的话，你可以考虑把token也放到这里。
+5. 在前端index4.html的左侧页面，增加一个工作区的目录展示页面，展示所有的工作区文件名，并预留按钮的位置，我不知道web页面上方不方便实现右键菜单，
+方便的话实现一个右键菜单，菜单选项查看和下载，如果不方便就使用按钮实现。
+
+
+检查server_v4.py，似乎SessionStateManager里的generate_download_token 和cleanup_expired_download_tokens_for_all_users 在_project_file没有正确使用？
+
+检查server_v4.py，重构 SessionStateManager ，我已经在代码中写好数据类和函数签名，请规划，有必要提出问题
+
+
+检查以下文件server_v5.py，front/index5.html , forward_test.py, front/forward_test.html ,后2个文件是我刚测试成功的，
+可以完美转发kkfileview请求的示例代码，现在需要你把示例代码的功能完好的移植到server_v5.py和 frontend/index5.html中
+
+
+在mcp工具中检查如下几个工具compare_project_file，query_project_files，read_project_file，query_specification_files，
+在返回结果为成功的位置增加 更新线程管理器状态的函数调用
