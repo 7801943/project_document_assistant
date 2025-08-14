@@ -142,7 +142,25 @@
                 .replace(/\\\[/g, '$$')
                 .replace(/\\\]/g, '$$');
 
+            // --- 自定义 marked.js 渲染器以重写图片路径 ---
+            // const renderer = new marked.Renderer();
+            // renderer.image = function(href, title, text) {
+            //     // 确保href是字符串再进行操作
+            //     if (typeof href === 'string' && !href.startsWith('http') && !href.startsWith('/')) {
+            //         href = '/spec_images/' + href;
+            //     }
+            //     // 使用原始的 image 渲染逻辑，但使用修改后的 href
+            //     let out = '<img src="' + href + '" alt="' + text + '"';
+            //     if (title) {
+            //         out += ' title="' + title + '"';
+            //     }
+            //     out += '>';
+            //     return out;
+            // };
+            // marked.setOptions({ renderer: renderer });
+            // --- 渲染Markdown ---
             outputDiv.innerHTML = marked.parse(processedText);
+            
             if (window.MathJax) {
                 MathJax.typesetPromise([outputDiv]).catch(err => {
                     console.error('MathJax 渲染失败: ' + err.message);

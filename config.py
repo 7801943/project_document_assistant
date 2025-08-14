@@ -14,11 +14,13 @@ class Settings(BaseSettings):
     SYSTEM_PROMPT: str
     # --- 通用项目设置 ---
     PROJECTS_ROOT_DIR: DirectoryPath = Path("/media/zhouxiang/FC7C74827C743A0A/Projects1") # 项目根目录
+    MANAGEMENT_ROOT_DIR: DirectoryPath = Path("/media/zhouxiang/FC7C74827C743A0A/管理文件") # 管理文件目录
     DEFAULT_YEAR: str = "2024" # 默认年份
     DEFAULT_STATUS: str = "送审" # 默认状态
 
     # --- 数据库和扫描设置 ---
-    DATABASE_NAME: str = "data/project_files.db" # 数据库文件名
+    # DATABASE_NAME: str = "data/project_files.db" # 数据库文件名
+    DOCUMENT_DB_PATH: str = "data/document_service.db"
     FILE_SCAN_CRON_HOUR: int = 23 # 文件扫描执行小时 (23点)
     FILE_SCAN_CRON_MINUTE: int = 0 # 文件扫描执行分钟
     FILE_WATCHER_COOLDOWN_SECONDS: int = 2 # 文件监视器事件处理延迟（防抖）
@@ -41,6 +43,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: SecretStr # OpenAI 兼容接口的 API 密钥
     OPENAI_MODEL_NAME: str # OpenAI 兼容接口的 模型名称
     CONVERSATION_ROOT_PATH: str = "chat_history" # 会话历史记录的根目录
+    MODELS_DB_PATH: str # 模型数据库
 
 
     # --- Dify 知识库配置 ---
@@ -63,30 +66,31 @@ class Settings(BaseSettings):
     # --- 模型上下文窗口（用于比较文件和文件读取工具）
     MODEL_CONTEXT_WINDOW: int = 64000
     # --- 下载链接配置 ---
-    DOWNLOAD_LINK_VALIDITY_SECONDS: int = 3600 # 下载链接有效期 (秒)
+    DOWNLOAD_LINK_VALIDITY_SECONDS: int = 36000 # 下载链接有效期 (秒) 5小时
 
     # --- 会话管理配置 ---
     SESSION_CLEANUP_INTERVAL_SECONDS: int = 60 # 会话清理任务执行间隔 (秒)
-    SESSION_OVERALL_INACTIVITY_TIMEOUT_SECONDS: int = 3600 # 整体会话不活动超时时间 (秒)
+    SESSION_OVERALL_INACTIVITY_TIMEOUT_SECONDS: int = 36000 # 整体会话不活动超时时间 (秒)
 
     # --- kkFileView 配置 ---
     KKFILEVIEW_BASE_URL: HttpUrl # kkFileView 服务地址, 例如 "http://127.0.0.1:8012/kkfileview"
     KKFILEVIEW_HTTP_TIMEOUT: float = 60.0
 
     # --- OnlyOffice 配置 ---
-    ONLYOFFICE_JWT_SECRET: SecretStr = Field(default="your_secret_key_for_onlyoffice") # 请在 .env 文件中覆盖此项
+    ONLYOFFICE_JWT_SECRET: SecretStr
     ONLYOFFICE_JWT_ENABLED: bool
 
-    # --- 用户认证配置 (从 .env 中的 JSON 字符串加载) ---
-    FAKE_USERS_DB_JSON: str = Field(default='{}') # 模拟用户数据库的 JSON 字符串
+    # --- 用户认证配置 ---
+    USERS_DB_PATH: str # 从 .env 加载用户数据库文件路径
+
 
     # --- 规程规范扫描配置 ---
     SPEC_ROOT_DIR: DirectoryPath = Path("/media/zhouxiang/FC7C74827C743A0A/规程规范") # 项目根目录
     SPEC_DIRS_CAT: str = Field(default='[]')
     ALLOWED_FILE_TYPES_JSON: str = Field(default='[]', alias='ALLOWED_FILE_TYPES')
-    SPEC_DATABASE_NAME: str = "data/spec_files.db"
-    SPEC_SCAN_CRON_HOUR: int = 2
-    SPEC_SCAN_CRON_MINUTE: int = 30
+    # SPEC_DATABASE_NAME: str = "data/spec_files.db"
+    # SPEC_SCAN_CRON_HOUR: int = 2
+    # SPEC_SCAN_CRON_MINUTE: int = 30
 
     # --- 计算属性 ---
     @property
@@ -96,9 +100,6 @@ class Settings(BaseSettings):
         except json.JSONDecodeError:
             config_logger.warning(f"无法解析 ALLOWED_FILE_TYPES_JSON: '{self.ALLOWED_FILE_TYPES_JSON}'。返回空列表。")
             return []
-    @property
-    def SPEC_DATABASE_PATH(self) -> Path:
-        return Path(__file__).parent / self.SPEC_DATABASE_NAME
 
     @property
     def SPEC_DIRS(self) -> List[str]:
@@ -107,11 +108,6 @@ class Settings(BaseSettings):
         except json.JSONDecodeError:
             config_logger.warning(f"无法解析 SPEC_DIRS_CAT: '{self.SPEC_DIRS_CAT}'。返回空列表。")
             return []
-
-    @property
-    def DATABASE_PATH(self) -> Path:
-        # config.py 与项目根目录同级, 因此 .parent 就是项目根目录
-        return Path(__file__).parent / self.DATABASE_NAME
 
     @property
     def SHEET_COLUMN_CONFIG(self) -> Dict[str, Tuple[int, int]]:
@@ -124,11 +120,36 @@ class Settings(BaseSettings):
             return {}
 
     @property
-    def FAKE_USERS_DB(self) -> Dict[str, Dict[str, str]]:
+    def MODELS_DB(self) -> Dict[str, Dict[str, str]]:
+        """
+        从 MODELS_DB_PATH 指定的文件路径加载用户数据库。
+        如果文件不存在或解析失败，则返回一个空字典并记录警告。
+        """
         try:
-            return json.loads(self.FAKE_USERS_DB_JSON)
+            with open(self.MODELS_DB_PATH, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            config_logger.warning(f"模型数据库文件未找到: '{self.MODELS_DB_PATH}'。返回空字典。")
+            return {}
         except json.JSONDecodeError:
-            config_logger.warning(f"无法解析 FAKE_USERS_DB_JSON: '{self.FAKE_USERS_DB_JSON}'。返回空字典。")
+            config_logger.warning(f"无法解析模型数据库文件: '{self.MODELS_DB_PATH}'。返回空字典。")
+            return {}
+
+    # 用户名密码
+    @property
+    def USERS_DB(self) -> Dict[str, Dict[str, str]]:
+        """
+        从 USERS_DB_PATH 指定的文件路径加载用户数据库。
+        如果文件不存在或解析失败，则返回一个空字典并记录警告。
+        """
+        try:
+            with open(self.USERS_DB_PATH, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            config_logger.warning(f"用户数据库文件未找到: '{self.USERS_DB_PATH}'。返回空字典。")
+            return {}
+        except json.JSONDecodeError:
+            config_logger.warning(f"无法解析用户数据库文件: '{self.USERS_DB_PATH}'。返回空字典。")
             return {}
 
     async def async_init(self):
@@ -153,5 +174,3 @@ class Settings(BaseSettings):
     )
 
 settings = Settings() # 创建 Settings 实例，Pydantic 会自动从 .env 文件加载配置
-
-

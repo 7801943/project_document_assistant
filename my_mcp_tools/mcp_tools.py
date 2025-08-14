@@ -14,13 +14,18 @@ import openai
 from sklearn.metrics.pairwise import cosine_similarity
 from fastmcp import FastMCP
 # from fastmcp import Context # Context 未在工具函数签名中使用
-
+import shutil
+from docxtpl import DocxTemplate
 from loguru import logger # Loguru 已在主程序配置，此处直接使用
 from core.data_model import DocType
-from database.specbase import query_specs_by_category # 导入新的数据库查询函数
+# from database.specbase import query_specs_by_category # 导入新的数据库查询函数
+from database.document_service import DocumentQueryService
+from database.document_service import query_specs_by_category
 from utils import file_parser # 假设 file_parser.py 可被正确导入
 from utils.utils import get_host_ipv6_addr# 导入自定义工具函数
+from utils.utils import remove_empty_paragraphs
 from config import settings # 导入配置
+
 
 # --- 标准化返回模型 ---
 class ToolBaseResponse(BaseModel):
@@ -101,31 +106,49 @@ def _get_spec_file_content(relative_file_path_str: str) -> str:
         logger.error(f"MCP Tool: 读取规程文件 {abs_file_path} 失败: {e}")
         return f"错误: 读取文件 {relative_file_path_str} 时发生错误。"
 
-def _connect_db(db_path: Path) -> sqlite3.Connection:
-    # 这个函数不依赖外部自定义模块，除了 sqlite3 和 Path
-    try:
-        conn = sqlite3.connect(db_path)
-        return conn
-    except sqlite3.Error as e:
-        logger.error(f"MCP Tool: 连接数据库 {db_path} 失败: {e}")
-        raise
+# def _connect_db(db_path: Path) -> sqlite3.Connection:
+#     # 这个函数不依赖外部自定义模块，除了 sqlite3 和 Path
+#     try:
+#         conn = sqlite3.connect(db_path)
+#         return conn
+#     except sqlite3.Error as e:
+#         logger.error(f"MCP Tool: 连接数据库 {db_path} 失败: {e}")
+#         raise
 
-def _get_available_project_names_nested(
-        current_cursor: sqlite3.Cursor,
-        current_year: Optional[str],
-        current_status_condition: str = f"(status = '{settings.DEFAULT_STATUS}' OR status = '收口')") -> List[str]:
-    '''
-    获取所有项目
-    '''
-    sql_query_parts_helper = [current_status_condition]
-    sql_params_helper = []
-    if current_year:
-        sql_query_parts_helper.append("year = ?")
-        sql_params_helper.append(current_year)
-    effective_where_clause_helper = " AND ".join(sql_query_parts_helper)
-    query_helper = f"SELECT DISTINCT project_name FROM indexed_files WHERE {effective_where_clause_helper} ORDER BY project_name"
-    current_cursor.execute(query_helper, sql_params_helper)
-    return [str(row[0]) for row in current_cursor.fetchall() if row[0] is not None]
+async def _get_available_project_names_from_new_service(
+    year: Optional[str] = None
+) -> Tuple[List[str],Dict[str,str]]:
+    """
+    [新适配器] 从 DocumentQueryService 获取可用项目名称和年份。
+    返回一个元组列表，每个元组包含 (项目名称, 年份)。
+    """
+    service = DocumentQueryService()
+    
+    query_params = {
+        "document_type": "项目文件",
+    }
+    if year:
+        query_params["year"] = year
+
+    results = await service.find_documents(**query_params)
+    
+    projects = set()
+    project_year_map = dict()
+    for row in results:
+        metadata_str = row.get("metadata")
+        if metadata_str:
+            try:
+                metadata = json.loads(metadata_str)
+                project_name = metadata.get("project_name")
+                project_year = metadata.get("year")
+                if project_name and project_year:
+                    projects.add(project_name)
+                    project_year_map[project_name] = project_year
+            except json.JSONDecodeError:
+                continue
+
+    return sorted(list(projects)), project_year_map
+
 
 def _get_embeddings(texts: List[str]) -> Optional[np.ndarray]:
     """获取文本向量"""
@@ -166,35 +189,55 @@ def _find_similar_items_with_scores(query_text: str, candidate_items: List[str],
     logger.debug(f"向量检索 Top-{top_k} 结果: {results}")
     return results
 
-# path_or_dir   token, filepath 格式
-async def _update_session_manager(user_name: str, files_path: List[Tuple[str,Path]], dir: str = "", doc_type: DocType = DocType.PROJECT):
-    '''
-    type dir或file,调用线程管理器更新状态， type=file 更新文件， tpye=dir 更新目录
-    '''
+async def _update_session_manager(
+    user_name: str, 
+    files_path: List[Union[Path, str]], 
+    dir_path: str = "", 
+    document_type: DocType = DocType.PROJECT
+) -> Optional[Dict[str, Any]]:
+    """
+    [重构后] 调用SessionManager更新状态，并返回包含token等信息的字典。
+    - 打开单个文件时, files_path 包含一个文件路径, dir_path 为空。
+    - 打开目录时, files_path 包含目录下所有文件的路径列表, dir_path 为目录路径。
+    """
     from core import app_state
-
-    if app_state.session_manager:
-        if dir == "":
-            # 场景：只打开单个或少量文件，而不是整个目录
-            for token, file_path in files_path:
-                await app_state.session_manager.update_opened_file(user_name, token, file_path, True, doc_type)
-        else:
-            # 场景：打开整个工作目录，覆盖更新
-            # 为目录本身生成一个token
-            dir_token = uuid.uuid4().hex
-            # 转换 files_path 的格式以匹配新的 update_opened_dir 签名
-            # 新签名需要 List[Tuple[str, str]]，格式为 (file_path_str, file_token)
-            # files_path 的格式是 List[Tuple[str, Path]]，格式为 (file_token, file_path_obj)
-            files_with_token_for_new_func = [(str(path_obj), token) for token, path_obj in files_path]
-
-            await app_state.session_manager.update_opened_dir(
-                user=user_name,
-                dir_path=dir,
-                dir_token=dir_token,
-                files_with_token=files_with_token_for_new_func
-            )
-    else:
+    if not app_state.session_manager:
         logger.error("Session manager is not initialized.")
+        return None
+
+    if dir_path:
+        # 场景：打开整个工作目录
+        # 将Path对象转换为字符串
+        str_files_path = [str(p) for p in files_path]
+        dir_entry = await app_state.session_manager.update_opened_dir(
+            user=user_name,
+            dir_path=dir_path,
+            files=str_files_path
+        )
+        if dir_entry:
+            # 对于目录，主要返回目录自身的token信息，文件token列表可在dir_entry.files中获取
+            return {
+                "dir_token": dir_entry.directory_token,
+                "dir_path": dir_entry.directory,
+                "files": dir_entry.files # 返回FileEntry对象列表
+            }
+    elif files_path:
+        # 场景：只打开单个文件
+        file_path = files_path[0]
+        file_entry = await app_state.session_manager.update_opened_file(
+            user=user_name, 
+            relative_file_path=file_path, 
+            llm_opened=True, 
+            document_type=document_type
+        )
+        if file_entry:
+            return {
+                "token": file_entry.token,
+                "file_path": file_entry.file_path,
+                "download_url": f"http://[{get_host_ipv6_addr()}]:{settings.SERVER_PORT}/download/{file_entry.token}/{Path(file_entry.file_path).name}"
+            }
+    
+    return None
 
 
 
@@ -294,7 +337,7 @@ def query_specification_knowledge_base(user_query:str, knowledge_base_name: str,
 @project_mcp.tool()
 async def diff_project_file(user:str, relative_file1_path: str,relative_file2_path: str, document_type: str, sheet_name: Optional[str] = None, all_sheet: bool = False) -> str:
     """
-    使用diff函数比较两个项目文件的差异，返回差异结果。
+    使用diff函数比较两个项目文档的差异，比如设计报告，材料请测，概算等，返回差异结果。
     参数：
         user: 发起调用的用户名
         relative_file1_path: 需要比较的文件1（比如XXX送审版）的相对路径。
@@ -523,20 +566,24 @@ async def diff_project_file(user:str, relative_file1_path: str,relative_file2_pa
         if success:
             if len(result) > settings.MODEL_CONTEXT_WINDOW:
                 logger.warning(f"比较结果长度{len(result)}，超过可能的模型上下文窗口{settings.MODEL_CONTEXT_WINDOW}")
-            token1 = uuid.uuid4().hex
-            token2 = uuid.uuid4().hex
+            # 分别为两个文件注册并获取信息
+            info1 = await _update_session_manager(user, [file_path1], document_type=DocType.PROJECT)
+            info2 = await _update_session_manager(user, [file_path2], document_type=DocType.PROJECT)
+
+            if not info1 or not info2:
+                logger.error(f"为 diff 文件注册会话失败: info1={info1}, info2={info2}")
+                return DiffFileResponse(content="N/A", hint="服务器内部错误：无法为文件注册会话。").model_dump_json()
+
             tool_response = DiffFileResponse(
                 content=result,
-                token1 = token1,
-                token2 = token2,
-                file_path1 = relative_file1_path,
-                file_path2 = relative_file2_path,
-                download_url1 = f"http://[{get_host_ipv6_addr()}]:{settings.SERVER_PORT}/download/{token1}/{relative_file1_path}",
-                download_url2 = f"http://[{get_host_ipv6_addr()}]:{settings.SERVER_PORT}/download/{token2}/{relative_file2_path}",
-                hint = success_hint
+                token1=info1.get("token"),
+                token2=info2.get("token"),
+                file_path1=relative_file1_path,
+                file_path2=relative_file2_path,
+                download_url1=info1.get("download_url"),
+                download_url2=info2.get("download_url"),
+                hint=success_hint
             )
-            # 通知会话管理器更新状态
-            await _update_session_manager(user, [(token1,file_path1),(token2,file_path2)])
             return tool_response.model_dump_json()
         else:
 
@@ -575,14 +622,14 @@ async def diff_project_file(user:str, relative_file1_path: str,relative_file2_pa
 @project_mcp.tool()
 async def read_project_file(user:str, relative_file_path: str, file_category: str, sheet_name: str = "") -> str:
     """
-    读取项目文件的文件内容并返回。
+    读取、打开项目文件的内容，主要是设计报告,图纸,清册,概算等
     参数：
-        user_name : 发起对话的用户名，必填
-        relative_file_path: 需要解析的文件的相对路径，通常由 query_project_file_path函数返回，必填
-        file_category: "普通文档" "图纸图形文档" "概算书文档" 必填之一
-        sheet_name: 如果为file_category="概算书文档" ，必填。
+        user_name : 发起对话的用户名（必填）
+        relative_file_path: 需要解析的文件的相对路径，通常由 query_project_file_path函数返回（必填）
+        file_category: "普通文档" "图纸图形文档" "概算书文档" （必填之一）
+        sheet_name: 如果为file_category="概算书文档" 未填写会返回待选sheet表名。
     返回：
-        一个标准ReadFileResponse模型的JSON字符串。
+        一个JSON字符串，含有文件内容，下载信息等
     """
     # from core import app_state
     logger.info(f"工具调用 (LLM): read_project_file. User: '{user}', Path: '{relative_file_path}', Category: '{file_category}'")
@@ -631,8 +678,8 @@ async def read_project_file(user:str, relative_file_path: str, file_category: st
     # --- 图纸图形文档 ---
     elif file_category == "图纸图形文档":
         logger.debug(f"{relative_file_path} 为llm暂不支持的文件类型。")
-        response.content = "本文件为图纸图形文档，暂不支持你读取。"
-        response.hint = "已为该文件生成下载链接，请提示用户下载查看。"
+        response.content = ""
+        response.hint = "本文件为图纸图形文档，暂不支持你读取。"
         success = True
 
     # --- 普通文档 ---
@@ -650,225 +697,125 @@ async def read_project_file(user:str, relative_file_path: str, file_category: st
             success = True
 
     if success:
-        response.token = uuid.uuid4().hex
-        response.download_url = f"http://[{get_host_ipv6_addr()}]:{settings.SERVER_PORT}/download/{response.token}/{abs_file_path.name}"
-        response.file_path = relative_file_path
-        logger.debug(f"为文件:{relative_file_path} 生成LLM工具下载token {response.token}")
-        # 通知线程管理器更新
-        await _update_session_manager(user,[(response.token,Path(relative_file_path))])
+        # 调用重构后的会话管理器来注册文件并获取token等信息
+        update_info = await _update_session_manager(user, [relative_file_path], document_type=DocType.PROJECT)
+        if update_info:
+            response.token = update_info.get("token")
+            response.download_url = update_info.get("download_url")
+            response.file_path = update_info.get("file_path")
+            response.hint += "已生成下载链接，以http或者markdown格式向用户提供下载链接。"
+            logger.debug(f"文件 '{relative_file_path}' 已在会话中注册, token: {response.token}")
+        else:
+            logger.error(f"为文件 '{relative_file_path}' 注册会话失败。")
+            response.hint = "服务器内部错误：无法为文件注册会话。"
+
     return response.model_dump_json()
-
-# 纯数据库查询模式
-# @project_mcp.tool()
-# def query_project_files(year: Optional[str] = None, project_name: Optional[str] = None) -> str:
-#     """
-#     根据project_name查询、检索数据库，获得唯一的项目名称(项目目录)及所属项目文件路径。
-#     参数:
-#         year: 项目的四位数字年份 (可选, 如'2024', 精确匹配)。如果未提供，则不按年份筛选。
-#         project_name: 项目名称的关键字 (可选, 如'abc输变电工程'中的'abc'，模糊匹配)。如果未提供，将返回所有可选项目名称列表以供选择。
-#                       如果提供，将尝试模糊匹配。
-#     返回:
-#         操作结果，token，项目文件路径，项目名称，提示
-#     """
-#     logger.info(f"工具调用: query_project_files, 年份='{year}', 项目关键字='{project_name}'")
-#     response_data = {'result': "", 'token': "", 'project_file_or_name_list': "", 'project_name': "", "hint": ""}
-#     try:
-#         # connect_db 和 settings.DATABASE_PATH 已在本文件/模块中可用
-#         with _connect_db(settings.DATABASE_PATH) as conn:
-#             cursor = conn.cursor()
-#             status_condition = f"(status = '{settings.DEFAULT_STATUS}' OR status = '收口')"
-#             def _get_available_project_names_nested(current_cursor: sqlite3.Cursor, current_year: Optional[str], current_status_condition: str) -> List[str]:
-#                 sql_query_parts_helper = [current_status_condition]
-#                 sql_params_helper = []
-#                 if current_year:
-#                     sql_query_parts_helper.append("year = ?")
-#                     sql_params_helper.append(current_year)
-#                 effective_where_clause_helper = " AND ".join(sql_query_parts_helper)
-#                 query_helper = f"SELECT DISTINCT project_name FROM indexed_files WHERE {effective_where_clause_helper} ORDER BY project_name"
-#                 current_cursor.execute(query_helper, sql_params_helper)
-#                 return [str(row[0]) for row in current_cursor.fetchall() if row[0] is not None]
-
-#             if not project_name:
-#                 response_data['result'] = "重试"
-#                 all_project_names = _get_available_project_names_nested(cursor, year, status_condition)
-#                 if all_project_names:
-#                     response_data['project_name'] = "\n".join(all_project_names)
-#                     response_data['hint'] = f"未提供项目名称。以上是 {year + '年' if year else ''} 可用的项目名称列表，请从中选择一个或提供项目名称关键字重试。"
-#                 else:
-#                     response_data['hint'] = f"{year + '年' if year else ''} 未找到任何项目。请检查年份或尝试不指定年份。"
-#                     response_data['result'] = "失败"
-#                 logger.debug(f"未提供 project_name。年份: '{year}'。获取所有可选项目共{len(all_project_names if all_project_names else [])}个。")
-#                 return json.dumps(response_data, ensure_ascii=False) # 防御None
-
-#             sql_query_parts_match_name = [status_condition]
-#             sql_params_match_name = []
-#             if year:
-#                 sql_query_parts_match_name.append("year = ?")
-#                 sql_params_match_name.append(year)
-#             sql_query_parts_match_name.append("project_name LIKE ?")
-#             sql_params_match_name.append(f"%{project_name}%")
-
-#             effective_where_clause_match_name = " AND ".join(sql_query_parts_match_name)
-#             query_match_name = f"SELECT DISTINCT project_name FROM indexed_files WHERE {effective_where_clause_match_name} ORDER BY project_name"
-#             logger.debug(f"执行SQL (查匹配项目名): {query_match_name} 参数: {sql_params_match_name}")
-#             cursor.execute(query_match_name, sql_params_match_name)
-#             matched_project_names = [str(row[0]) for row in cursor.fetchall() if row[0] is not None]
-#             logger.info(f"根据关键字 '{project_name}' {('和年份 ' + year) if year else ''} 查询到 {len(matched_project_names)} 个匹配的项目名称。")
-
-#             if len(matched_project_names) == 0:
-#                 # 未匹配到任何项目
-#                 response_data['result'] = "重试"; initial_hint = f"未找到与关键字 '{project_name}' {('和年份 ' + year) if year else ''} 匹配的项目。" # 移除“返回年份所有项目”的承诺
-#                 all_fallback_project_names = _get_available_project_names_nested(cursor, year, status_condition)
-#                 if all_fallback_project_names:
-#                     response_data['project_file_list'] = "\n".join(all_fallback_project_names)
-#                     response_data['hint'] = f"{initial_hint} 以下是 {year + '年' if year else ''} 可用的项目名称列表 ({len(all_fallback_project_names)}个)，请从中选择一个或提供不同的项目名称关键字重试。"
-#                 else:
-#                     response_data['hint'] = f"{initial_hint} 此外，在 {year + '年' if year else '所有年份'} 中也未找到任何可选项目。请检查年份或项目库。"
-#                 logger.debug(f"未找到与关键字 '{project_name}' {('和年份 ' + year) if year else ''} 匹配的项目。返回{year if year else ''}所有项目{len(all_fallback_project_names if all_fallback_project_names else [])}个。") # 防御None
-#             elif len(matched_project_names) == 1:
-#                 # 匹配到1个项目
-#                 unique_project_name = matched_project_names[0]
-#                 response_data['result'] = "完成"; response_data['project_name'] = unique_project_name
-#                 sql_query_files_parts = [status_condition, "project_name = ?"]
-#                 sql_params_files = [unique_project_name] # 修正变量名
-#                 if year:
-#                     sql_query_files_parts.append("year = ?")
-#                     sql_params_files.append(year) # 修正变量名
-#                 effective_where_clause_files = " AND ".join(sql_query_files_parts) # 修正变量名
-#                 query_files = f"SELECT file_path FROM indexed_files WHERE {effective_where_clause_files} ORDER BY file_path"
-#                 logger.debug(f"执行SQL (查项目文件): {query_files} 参数: {sql_params_files}")
-#                 cursor.execute(query_files, sql_params_files)
-#                 file_paths = [str(row[0]) for row in cursor.fetchall() if row[0] is not None]
-#                 if file_paths:
-#                     response_data['project_file_list'] = "\n".join(file_paths)
-#                     response_data['hint'] = f"已成功查询到项目 '{unique_project_name}' 的文件列表 ({len(file_paths)}个文件)。"
-#                     response_data['token'] = uuid.uuid4().hex
-#                 else:
-#                     # 项目存在，但文件为空
-#                     response_data['hint'] = f"项目 '{unique_project_name}' 存在，但未找到其下的任何文件记录 (状态为'{settings.DEFAULT_STATUS}'或'收口')。" # 使用 settings.DEFAULT_STATUS
-#                 logger.info(f"已成功查询到匹配的项目 '{unique_project_name}' ,文件列表 ({len(file_paths)}个文件)。")
-#             else: # len(matched_project_names) > 1
-#                 response_data['result'] = "重试"
-#                 response_data['hint'] = f"找到多个与关键字 '{project_name}' {('和年份 ' + year) if year else ''} 匹配的项目名称 ({len(matched_project_names)}个): {', '.join(matched_project_names[:5])}{'...' if len(matched_project_names) > 5 else ''}。 请提供更精确的项目名称以获得唯一结果。"
-#                 # logger.info(f"已成功查询到匹配的项目 '{unique_project_name}')。") # unique_project_name 在此分支未定义，移除此日志或修正
-#                 logger.info(f"找到多个匹配项目: {len(matched_project_names)} 个。")
-
-
-#     except sqlite3.Error as e: logger.error(f"查询索引数据库时发生错误: {e}"); response_data['result'] = "失败"; response_data['project_file_list'] = ""; response_data['hint'] = "数据库查询时发生错误，请检查服务器日志。"
-#     except Exception as e: logger.error(f"查询索引文件时发生未知错误: {e}", exc_info=True); response_data['result'] = "失败"; response_data['project_file_list'] = ""; response_data['hint'] = "查询过程中发生未知错误，请检查服务器日志。"
-#     r = [f"《{key}:{value}》" for key, value in response_data.items()]
-#     return "".join(r)
 
 
 @project_mcp.tool()
 async def query_project_files(user:str, project_name: str, year: Optional[str] = None) -> str:
     """
-    根据项目名称关键字查询项目文件列表。
+    根据项目名称project_name模糊查询数据库中的项目文件。
     参数:
-        user: 发起调用的用户名
-        project_name: 项目名称的关键字，采用模糊匹配加向量相似度方式检索，如果为"/ALL",返回所有项目。
-        year: 项目的四位数字年份 (默认为'2024')。如果为None，则检索所有年份。
+        user: 发起调用的用户名（必填）
+        project_name: 项目名称的关键字（必填），采用模糊匹配加向量相似度方式检索，如果为"/ALL",返回所有项目。
+        year: 项目的四位数字年份 (默认 '2024')。如果为None，则检索所有年份。
     返回:
         一个JSON字符串，当仅有一个项目匹配时，返回项目文件列表，否则返回多个候选项目名称
     """
-    logger.info(f"工具调用: query_project_files, 项目关键字='{project_name}', 年份='{year}'")
+    logger.info(f"工具调用 (新版): query_project_files, 项目关键字='{project_name}', 年份='{year}'")
     response_data = {}
-
-    def get_project_files(cursor: sqlite3.Cursor, proj_name: str, yr: Optional[str]) -> List[str]:
-        """获取指定项目的所有文件路径"""
-        query_parts = ["project_name = ?"]
-        params = [proj_name]
-        if yr:
-            query_parts.append("year = ?")
-            params.append(yr)
-        query = f"SELECT file_path FROM indexed_files WHERE {' AND '.join(query_parts)} ORDER BY file_path"
-        cursor.execute(query, params)
-        return [row[0] for row in cursor.fetchall()]
+    service = DocumentQueryService()
 
     try:
-        with _connect_db(settings.DATABASE_PATH) as conn:
-            cursor = conn.cursor()
+        # 获取所有符合条件的可用项目名称
+        all_available_projects, project_year = await _get_available_project_names_from_new_service(year=year)
 
-            if project_name == "/ALL":
-                logger.info("收到全部项目查询请求")
-                all_projects ="\n".join(_get_available_project_names_nested(cursor, year))
-                response_data = {"hint":f"数据库中{year or ''}年份的所有项目如下:","project_name":all_projects}
-                return json.dumps(response_data, ensure_ascii=False)
+        if project_name == "/ALL":
+            logger.info("收到全部项目查询请求")
+            response_data = {
+                "hint": f"数据库中{year or ''}年份的所有项目如下:",
+                "project_name": "\n".join(all_available_projects)
+            }
+            return json.dumps(response_data, ensure_ascii=False)
 
-            logger.debug(f"第一步: 开始模糊匹配，关键字: '{project_name}', 年份: {year}")
-            sql_query_parts = ["project_name LIKE ?"]
-            sql_params = [f"%{project_name}%"]
-            if year:
-                sql_query_parts.append("year = ?")
-                sql_params.append(year)
+        # 1. 精确匹配
+        if project_name in all_available_projects:
+            logger.info(f"精确匹配到项目: '{project_name}'")
+            project_files_rows = await service.find_documents(document_type='项目文件', project_name=project_name)
+            project_files = [row['relative_path'] for row in project_files_rows if row.get('relative_path')]
+            response_data = {"project_name": project_name, "project_files": project_files, "hint": "文件较多，若用户无要求，无需罗列"}
+            # 使用新的签名调用
+            await _update_session_manager(user, project_files, dir_path= project_year[project_name] + "/" + project_name)
+            return json.dumps(response_data, ensure_ascii=False)
 
-            query = f"SELECT DISTINCT project_name FROM indexed_files WHERE {' AND '.join(sql_query_parts)}"
-            cursor.execute(query, sql_params)
-            matched_projects = [row[0] for row in cursor.fetchall()]
-            logger.debug(f"模糊匹配查询到 {len(matched_projects)} 个项目: {matched_projects}")
+        # 2. 模糊匹配 (如果精确匹配失败)
+        # Python的 `in` 操作符可以实现简单的模糊匹配
+        matched_projects = [p for p in all_available_projects if project_name in p]
+        logger.debug(f"模糊匹配查询到 {len(matched_projects)} 个项目: {matched_projects}")
 
-            if len(matched_projects) == 1:
-                the_project_name = matched_projects[0]
-                logger.info(f"模糊匹配到唯一项目: '{the_project_name}'")
-                project_files = get_project_files(cursor, the_project_name, year)
-                response_data = {"project_name": the_project_name, "project_files": project_files,"hint":"文件较多，若用户无要求，无需罗列"}
-                # 更新会话管理器
-                await _update_session_manager(user,[(uuid.uuid4().hex, Path(item)) for item in project_files],the_project_name)
+        if len(matched_projects) == 1:
+            the_project_name = matched_projects[0]
+            logger.info(f"模糊匹配到唯一项目: '{the_project_name}'")
+            project_files_rows = await service.find_documents(document_type='项目文件', project_name=the_project_name)
+            project_files = [row['relative_path'] for row in project_files_rows if row.get('relative_path')]
+            response_data = {"project_name": the_project_name, "project_files": project_files, "hint": "文件较多，若用户无要求，无需罗列"}
+            await _update_session_manager(user, project_files, dir_path=project_year[the_project_name] + "/" + the_project_name)
+            return json.dumps(response_data, ensure_ascii=False)
 
-            elif len(matched_projects) > 1 and settings.EMBEDDING_AVAILABLE:
-                logger.debug(f"模糊匹配到多个项目，使用向量检索辅助判断。")
-                top_project_with_score = _find_similar_items_with_scores(project_name, matched_projects, 1)
-                if top_project_with_score:
-                    the_project_name = top_project_with_score[0][0]
-                    logger.info(f"向量检索匹配top1项目: '{the_project_name}'")
-                    project_files = get_project_files(cursor, the_project_name, year)
-                    response_data = {"project_name": the_project_name, "project_files": project_files, "hint":"文件较多，若用户无要求，无需罗列"}
-                    # 更新会话管理器
-                    await _update_session_manager(user,[(uuid.uuid4().hex, Path(item)) for item in project_files],the_project_name)
-                else:
-                    response_data = {"hint": "向量检索辅助判断失败。", "project_name": matched_projects}
+        # 3. 向量检索 (如果模糊匹配找到多个或0个)
+        if settings.EMBEDDING_AVAILABLE:
+            candidate_projects = matched_projects if matched_projects else all_available_projects
+            if not candidate_projects:
+                 response_data = {"hint": f"数据库中{'在' + year + '年份' if year else ''}未找到任何项目。", "project_name": "None"}
+                 return json.dumps(response_data, ensure_ascii=False)
 
-            elif len(matched_projects) == 0 and settings.EMBEDDING_AVAILABLE:
-                logger.debug("模糊匹配未找到，使用全局向量检索。")
-                all_projects = _get_available_project_names_nested(cursor, year)
-                if not all_projects:
-                    response_data = {"hint": f"数据库中{'在' + year + '年份' if year else ''}未找到任何项目。", "project_name": "None"}
-                else:
-                    similar_projects = _find_similar_items_with_scores(project_name, all_projects, 3)
-                    if similar_projects and similar_projects[0][1] > 0.8:
-                        the_project_name = similar_projects[0][0]
-                        logger.info(f"向量检索找到高分匹配项 (分数 > 0.8): '{the_project_name}'")
-                        project_files = get_project_files(cursor, the_project_name, year)
-                        response_data = {"project_name": the_project_name, "project_files": project_files, "hint":"文件较多，若用户无要求，无需罗列"}
-                        # 更新会话管理器
-                        await _update_session_manager(user,[(uuid.uuid4().hex, Path(item)) for item in project_files],the_project_name)
-                    else:
-                        top_3_names = [p[0] for p in similar_projects]
-                        response_data = {"hint": "未找到精确匹配的项目，是否是以下几个项目？请以数字方式列表展示给用户并重试。", "project_name": top_3_names}
-            else: # Not found and embedding is not available
+            logger.debug(f"使用向量检索辅助判断，候选项目数: {len(candidate_projects)}")
+            # 返回候选3个项目
+            similar_projects = _find_similar_items_with_scores(project_name, candidate_projects, 3)
+
+            if len(candidate_projects) > 1 and similar_projects and similar_projects[0][1] > 0.8: # 模糊匹配到多个，用向量检索辅助
+                top_project_name = similar_projects[0][0]
+                logger.info(f"向量检索匹配top1项目: '{top_project_name}'")
+                project_files_rows = await service.find_documents(document_type='项目文件', project_name=top_project_name)
+                project_files = [row['relative_path'] for row in project_files_rows if row.get('relative_path')]
+                response_data = {"project_name": top_project_name, "project_files": project_files, "hint": "文件较多，若用户无要求，无需罗列"}
+                await _update_session_manager(user, project_files, dir_path=project_year[project_name] + "/" +top_project_name)
+
+            elif len(candidate_projects) > 0 and similar_projects and similar_projects[0][1] > 0.8: # 模糊匹配为0，全局向量检索
+                top_project_name = similar_projects[0][0]
+                logger.info(f"全局向量检索找到高分匹配项 (分数 > 0.8): '{top_project_name}'")
+                project_files_rows = await service.find_documents(document_type='项目文件', project_name=top_project_name)
+                project_files = [row['relative_path'] for row in project_files_rows if row.get('relative_path')]
+                response_data = {"project_name": top_project_name, "project_files": project_files, "hint": "文件较多，若用户无要求，无需罗列"}
+                await _update_session_manager(user, project_files, dir_path=project_year[project_name] + "/" +top_project_name)
+            else: # 未找到高分匹配
+                top_3_names = [p[0] for p in similar_projects]
+                response_data = {"hint": "未找到精确匹配的项目，是否是以下几个项目？请以数字方式列表展示给用户并重试。", "project_name": top_3_names}
+        else:
+            # 向量检索不可用
+            if matched_projects: # 模糊匹配有多个结果
+                 response_data = {"hint": "找到多个可能的项目，且向量检索功能不可用，请提供更精确的项目名称。", "project_name": matched_projects}
+            else: # 模糊匹配无结果
                  response_data = {"hint": "未找到匹配项目，且向量检索功能不可用。", "project_name": "None"}
 
-    except sqlite3.Error as e:
-        logger.error(f"数据库操作失败: {e}", exc_info=True)
-        response_data = {"error": f"数据库错误: {e}"}
     except Exception as e:
-        logger.error(f"处理 query_project_files 时发生未知错误: {e}", exc_info=True)
+        logger.error(f"处理 query_project_files (新版) 时发生未知错误: {e}", exc_info=True)
         response_data = {"error": f"未知错误: {e}"}
 
     return json.dumps(response_data, ensure_ascii=False)
 
 
 @project_mcp.tool()
-async def open_specification_files(user: str, query_spec_filename: str, category: str, read_file: bool = False, top_n: int = 3) -> str:
+async def open_specification_files(user: str, query_spec_filename: str, category: str, read_file: bool = False, top_n: int = 10) -> str:
     """
-    根据关键字向量检索规程规范文件，并可选择性地读取文件内容。
-
+    根据名称检索、读取、打开规范规程文件，返回最相似的规范名称列表或者规范内容
     参数:
         user: 发起调用的用户名
         query_spec_filename：要查询的规范文件全名，若无匹配，将返回最相似的文件。若为"/ALL" 返回专业下的所有规范
         category (str): 规程规范的专业类别，必须是预设类别之一。["电气","二次"，"通信"，"土建"，"线路"，"技经"，"公用"]
-        read_file (bool): 是否读取最匹配文件的内容。默认为 False。
-        top_n (int): 返回最相似文件路径的数量。默认为 3。
+        read_file (bool): 是否读取最匹配文件的内容。默认为 False。若为True，当高度匹配时，读取规范内容并返回。
+        top_n (int): 返回最相似文件路径的数量。默认为 10。
 
     返回:
         一个标准OpenSpecFilesResponse模型的JSON字符串。
@@ -886,10 +833,24 @@ async def open_specification_files(user: str, query_spec_filename: str, category
         return OpenSpecFilesResponse(content=msg, hint="请联系管理员检查嵌入模型配置。").model_dump_json()
 
     try:
-        all_specs_in_category = query_specs_by_category(str(settings.SPEC_DATABASE_PATH), category)
+        # 获取所有规范
+        # all_specs_in_category = await query_specs_by_category(str(settings.SPEC_DATABASE_PATH), category)
+        all_specs_in_category = await query_specs_by_category(category)
 
         if not all_specs_in_category:
             msg = f"在专业类别 '{category}' 下未找到任何规程规范文件。"
+            logger.warning(msg)
+            return OpenSpecFilesResponse(content="", hint=msg, files=[]).model_dump_json()
+
+        # 在此处添加过滤逻辑，只保留文档类型文件用于检索
+        searchable_extensions = {".pdf", ".md", ".docx", ".txt", ".ofd", ".ceb"}
+        searchable_specs = {
+            name: path for name, path in all_specs_in_category.items()
+            if Path(path).suffix.lower() in searchable_extensions
+        }
+
+        if not searchable_specs:
+            msg = f"在专业类别 '{category}' 下未找到可供检索的文档文件（如PDF, MD, DOCX等）。"
             logger.warning(msg)
             return OpenSpecFilesResponse(content="", hint=msg, files=[]).model_dump_json()
 
@@ -902,7 +863,7 @@ async def open_specification_files(user: str, query_spec_filename: str, category
                 files=spec_files
             ).model_dump_json()
 
-        spec_names = list(all_specs_in_category.keys())
+        spec_names = list(searchable_specs.keys())
         similar_specs = _find_similar_items_with_scores(query_spec_filename, spec_names, top_n)
 
         if not similar_specs:
@@ -911,7 +872,7 @@ async def open_specification_files(user: str, query_spec_filename: str, category
             return OpenSpecFilesResponse(content="", hint=msg, files=[]).model_dump_json()
 
         matched_files = [
-            SpecFile(path=all_specs_in_category[name], similarity=score)
+            SpecFile(path=searchable_specs[name], similarity=score)
             for name, score in similar_specs
         ]
 
@@ -941,15 +902,18 @@ async def open_specification_files(user: str, query_spec_filename: str, category
                     logger.warning(f"文件 '{top_match.path}' 内容过长，可能超过模型上下文窗口。")
                     content = f"文件内容过长(超过{settings.MODEL_CONTEXT_WINDOW}字符)，已截断，请提示用户下载查看完整内容。"
 
-                token = uuid.uuid4().hex
-                await _update_session_manager(user, [(token, Path(top_match.path))], doc_type=DocType.STANDARD)
+                # 调用会话管理器注册文件并获取信息
+                update_info = await _update_session_manager(user, [top_match.path], document_type=DocType.STANDARD)
+                if not update_info:
+                    logger.error(f"为规程文件 '{top_match.path}' 注册会话失败。")
+                    return OpenSpecFilesResponse(content=content, hint="服务器内部错误：无法为文件注册会话。").model_dump_json()
 
                 return OpenSpecFilesResponse(
                     content=content,
                     hint="已成功读取最匹配的文件内容。",
-                    token=token,
-                    download_url=f"http://[{get_host_ipv6_addr()}]:{settings.SERVER_PORT}/download/{token}/{Path(top_match.path).name}",
-                    file_path=top_match.path,
+                    token=update_info.get("token"),
+                    download_url=update_info.get("download_url"),
+                    file_path=update_info.get("file_path"),
                     similarity=top_match.similarity
                 ).model_dump_json()
             else:
@@ -973,3 +937,104 @@ async def open_specification_files(user: str, query_spec_filename: str, category
     except Exception as e:
         logger.error(f"查询规程规范文件时发生未知错误: {e}", exc_info=True)
         return OpenSpecFilesResponse(content=f"未知错误: {e}", hint="请联系管理员检查服务器日志。").model_dump_json()
+
+@project_mcp.tool()
+async def write_review_doc(user:str, template_type: str ="主变扩建工程模板", project_name: str = "", content: str = "", get_manual: bool = True) -> str:
+    """
+    根据模板生成二次系统评审意见文档，或返回模板指令。
+    这是一个二阶段工具：首先使用 get_manual=True 获取使用指令，根据指令准备好project_name 和 content，
+    再调用本工具（get_manual=False）生成评审意见。
+    :param user: 用户名
+    :param template_type: 模板类型名称（用于匹配模板文件），例如 "主变扩建工程模板"。
+    :param project_name: 项目名称。当 get_manual=False 时必填。
+    :param content: 一个 JSON 字符串，包含生成评审意见所需的信息，格式遵循 manual 的指令。当 get_manual=False 时必填。
+    :param get_manual: 为 True 时返回模板操作指令说明，为 False 时生成文档。
+
+    :return: 如果 get_manual 为 True，返回纯文本的说明文档内容。
+             否则，返回一个标准 ToolBaseResponse 模型的 JSON 字符串，
+             其中 content 字段包含成功生成的文件路径或错误信息。
+    """
+    from core import app_state
+
+    template_path = Path('data/review_template/二次')
+    template_docx_path = template_path / f"{template_type}.docx"
+    instruction_path = template_path / f"{template_type}_template_instruction.txt"
+
+    if get_manual:
+        try:
+            if not instruction_path.exists():
+                raise FileNotFoundError(f"找不到指令文件: {instruction_path}")
+            return instruction_path.read_text(encoding='utf-8')
+        except FileNotFoundError as e:
+            logger.error(e)
+            # 虽然此场景返回JSON更一致，但遵循旧逻辑，get_manual=True时返回纯文本
+            return f"错误: {e}。请检查模板类型是否正确。"
+
+    if not project_name or not content or not template_type:
+        msg = "参数错误, 当 get_manual=False 时, 'project_name' 和 'content' 和 template_type不能为空。"
+        logger.error(msg)
+        return ToolBaseResponse(content=msg, hint="请提供项目名称和内容后重试。").model_dump_json()
+
+    try:
+        if not template_docx_path.exists():
+            raise FileNotFoundError(f"找不到模板文件: {template_docx_path}")
+
+        logger.debug(f"获取到的content：{content}")
+        context = json.loads(content)
+
+        # 确定输出目录
+        output_filename = f"（二次）{project_name}评审意见.docx"
+        output_path = None
+        
+        if app_state.session_manager:
+            user_data = await app_state.session_manager.get_user_data(user)
+            if user_data and user_data.working_directory:
+                # 从 DirEntry 对象中获取路径字符串，并确保它是 Path 对象
+                work_dir = Path(user_data.working_directory.directory)
+                logger.debug(f"评审意见输出目标{work_dir}")
+                # 定义并创建目标目录
+                target_dir = settings.PROJECTS_ROOT_DIR / work_dir / "过程文件" / "评审意见草稿"
+                target_dir.mkdir(parents=True, exist_ok=True)
+                output_path = target_dir / output_filename
+            else:
+                logger.warning(f"无法获取用户 '{user}' 的工作目录，将使用默认输出目录。")
+
+        # 如果无法从会话管理器获取路径，则使用默认路径
+        if not output_path:
+            default_dir = Path('data/review_output')
+            default_dir.mkdir(exist_ok=True)
+            output_path = default_dir / output_filename
+
+        # 复制模板到目标路径
+        shutil.copy(template_docx_path, output_path)
+
+        # 使用 docxtpl 渲染
+        tpl = DocxTemplate(output_path)
+        tpl.render(context)
+        tpl.save(output_path)
+
+        remove_empty_paragraphs(str(output_path))
+
+        # 使用正确的参数调用会话管理器
+        file_entry_info = await _update_session_manager(user_name=user, files_path=[output_path], document_type=DocType.PROJECT)
+
+        if not file_entry_info:
+            logger.error(f"为文件 '{output_path}' 注册会话失败。")
+            return ToolBaseResponse(content=f"成功生成文档，但无法注册会话: {output_path}", hint="服务器内部错误：无法为文件注册会话。").model_dump_json()
+
+        logger.info(f"成功生成评审意见文档: {output_path}")
+        return ToolBaseResponse(
+            content=f"成功生成评审意见文档: {file_entry_info.get('file_path', str(output_path))}",
+            hint=f"已生成下载链接: {file_entry_info.get('download_url', 'N/A')}",
+            token=file_entry_info.get('token')
+        ).model_dump_json()
+
+    except FileNotFoundError as e:
+        logger.error(e)
+        return ToolBaseResponse(content=f"错误: {e}", hint="请检查模板文件是否存在。").model_dump_json()
+    except json.JSONDecodeError as e:
+        logger.error(f"无法解析 content JSON：{e}")
+        return ToolBaseResponse(content=f"错误: 无法解析 content JSON: {e}", hint="请检查 content 参数是否为合法的 JSON 格式。").model_dump_json()
+    except Exception as e:
+        logger.error(f"生成评审意见时发生未知错误: {e}", exc_info=True)
+        return ToolBaseResponse(content=f"错误: {e}", hint="生成文档时发生未知错误，请联系管理员。").model_dump_json()

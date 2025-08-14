@@ -1,3 +1,12 @@
 # 忽略的文件夹
 old_code/
 venv/
+chat_history/
+*.db
+*.env
+*.txt
+*.sh
+temp_query_script.py
+temp.py
+temp1.py
+*.json

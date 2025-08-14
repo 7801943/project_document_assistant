@@ -1,0 +1,68 @@
+<div class="workdir-container">
+    <!-- 工具栏 -->
+    <div class="workdir-toolbar">
+        <button id="create-project-btn" class="workdir-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+            </svg>
+            <span>创建项目</span>
+        </button>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="搜索项目文件...">
+            <button id="search-btn" class="workdir-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+                </svg>
+                <span>查询</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 文件树 -->
+    <div id="file-tree-container" style="height: calc(100% - 50px); overflow: auto;"></div>
+</div>
+
+<!-- 创建项目模态框 -->
+<div id="create-project-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="modal-close-button">&times;</span>
+        <h2>创建新项目</h2>
+        <form id="create-project-form">
+            <div class="form-group">
+                <label for="project-year">项目年份:</label>
+                <select id="project-year" name="year" required></select>
+            </div>
+            <div class="form-group">
+                <label for="project-name">项目名称:</label>
+                <input type="text" id="project-name" name="project_name" required>
+            </div>
+            <div class="form-group">
+                <label for="project-files">项目文件/目录:</label>
+                <input type="file" id="project-files" name="files" webkitdirectory directory multiple required>
+                <small>选择一个目录进行上传。</small>
+            </div>
+            <div class="form-group">
+                <label for="overwrite-project">
+                    <input type="checkbox" id="overwrite-project" name="overwrite">
+                    覆盖同名项目
+                </label>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="workdir-btn">创建</button>
+                <button type="button" id="cancel-create-project" class="workdir-btn-secondary">取消</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 项目选择模态框 -->
+<div id="project-selection-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="modal-close-button">&times;</span>
+        <h2>请选择项目</h2>
+        <div id="project-list-container">
+            <!-- 项目列表将由JS动态生成 -->
+        </div>
+    </div>
+</div>

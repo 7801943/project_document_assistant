@@ -9,41 +9,37 @@
     <script type="text/javascript" src="/static/base64.min.js" defer></script>
     <!-- Added from botui.html -->
     <script src="/static/marked.min.js"></script>
-    <script src="/static/upload/upload_form.js" defer></script>
+    <script src="/static/upload/upload_standard.js" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
+    <!-- jsTree theme -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/themes/default/style.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
 <body>
 
     <div class="app-wrapper">
         <header class="app-header">
             <div class="title-container"> <!-- Title and status in a container -->
-                <div class="title">我的工作台</div>
+                <div class="title"><span id="user-name">我</span>的工作台</div>
                 <span id="login-status-indicator"></span>
             </div>
             <div class="header-actions">
-                <button id="toggle-right-panel-button" class="auth-button login" style="background-color: #007bff; margin-right: 10px;" title="切换右侧面板">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-layout-sidebar-inset-reverse" viewBox="0 0 16 16">
-                        <path d="M2 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zm12-1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/>
-                        <path d="M13 4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h1V4z"/>
-                    </svg>
-                    <span style="margin-left: 8px;">切换面板</span>
-                </button>
-                <button id="upload-spec-button" class="auth-button login" style="background-color: #198754; margin-right: 10px;" title="上传本地规程目录">
+                <button id="upload-spec-button" class="auth-button login" style="margin-right: 10px;" title="上传规程文件">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-arrow-up-fill" viewBox="0 0 16 16">
                         <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2m2.354 5.146a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0z"/>
                     </svg>
-                    <span style="margin-left: 8px;">上传规程</span>
+                    <span style="margin-left: 8px;">上传规程文件</span>
                 </button>
-                <button id="test-onlyoffice-button" class="auth-button login" style="background-color: #dc3545; margin-right: 10px;" title="测试OnlyOffice接口">
+                <!-- <button id="test-onlyoffice-button" class="auth-button login" style="background-color: #dc3545; margin-right: 10px;" title="测试OnlyOffice接口">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bug-fill" viewBox="0 0 16 16">
                         <path d="M4.978.855a.5.5 0 1 0-.956.29l.41 1.352A5 5 0 0 0 3 5h10a5 5 0 0 0-1.432-2.503l.41-1.352a.5.5 0 1 0-.956-.29l-.291.956A5 5 0 0 0 8 1a5 5 0 0 0-2.731.811z"/>
                         <path d="M13 6v1H8.5v-.03a2 2 0 0 1 1.482-1.862l.434-.174A2 2 0 0 1 12.5 5.97V6zM7.5 7H3V6h1.522a2 2 0 0 1 1.897-1.443l.482-.193A2 2 0 0 1 8.5 5.97V6v1zM13 8v2H8.5v-2zm-5.5 0v2H3V8zm1.146 3.354a.5.5 0 0 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0l1.5-1.5a.5.5 0 0 0-.708-.708L8.5 12.293z"/>
                     </svg>
                     <span style="margin-left: 8px;">测试接口</span>
-                </button>
+                </button> -->
                 <button id="theme-toggle" class="theme-toggle-button" title="切换主题">
                     <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m-4.646.354a.5.5 0 0 1-.708 0l-1.414-1.414a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708m9.193 0a.5.5 0 0 1 0-.708l1.414-1.414a.5.5 0 0 1 .708.707l-1.414 1.414a.5.5 0 0 1-.708 0m-9.193-9.193a.5.5 0 0 1-.708-.707l1.414-1.414a.5.5 0 1 1 .707.707L3.354 5.354a.5.5 0 0 1 0-.708M13.646 5.354a.5.5 0 0 1 0 .707L12.232 7.5a.5.5 0 0 1-.707-.707L13.646 5.354a.5.5 0 0 1 .708 0M1.5 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1.5 8m13 0a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5"/></svg>
                     <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
@@ -67,13 +63,14 @@
                 </nav>
                 <div class="content-viewer" id="content-viewer">
                     <div id="placeholder" class="placeholder" style="display: flex; width: 100%; height: 100%;"><span>请选择一个文件进行预览</span></div>
-                    <div id="workdir-viewer" style="display: none;">
-                        <h3 id="workdir-path">工作目录</h3>
-                        <ul id="workdir-file-list" class="workdir-file-list">
-                            <!-- 文件列表将动态填充于此 -->
-                        </ul>
+                    <div id="workdir-viewer" style="display: none; height: 100%; padding: 10px; box-sizing: border-box;">
+                        <!-- The file tree will be loaded here -->
                     </div>
                 </div>
+            </div>
+            <div id="resizer" class="resizer-overlay">
+                <button id="collapse-left" class="panel-toggle floating-btn left-btn" title="隐藏左侧">〈</button>
+                <button id="collapse-right" class="panel-toggle floating-btn right-btn" title="隐藏右侧">〉</button>
             </div>
             <div class="right-panel">
                 <nav class="tab-navigation" id="right-tab-navigation-container">
@@ -83,7 +80,7 @@
                             <path d="M4.5 9a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 0-1h-6a.5.5 0 0 0-.5.5M12.292 3.412a.5.5 0 0 1 .208.666l-1.21 2.422a.5.5 0 0 1-.866-.434l1.21-2.422a.5.5 0 0 1 .658-.232m-8.584 0a.5.5 0 0 0 .208.666l1.21 2.422a.5.5 0 0 0 .866-.434l-1.21-2.422a.5.5 0 0 0-.658-.232"/>
                             <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1M3 8a5 5 0 0 1 10 0v1.256A4.5 4.5 0 0 1 8 15a4.5 4.5 0 0 1-5-4.744z"/>
                         </svg>
-                        <span>聊天</span>
+                        <span>AI助手</span>
                     </button>
                     <button id="onlyoffice-tab-button" class="tab-button" title="在线编辑">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
@@ -108,6 +105,9 @@
     <!-- Upload Spec Modal Container -->
     <div id="upload-modal-container"></div>
 
+    <!-- jsTree libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js"></script>
 
 <script>
     // --- Global State & DOM Refs from index4.html ---
@@ -133,6 +133,8 @@
     const onlyofficeTabButton = document.getElementById('onlyoffice-tab-button'); // 新增：获取在线编辑按钮
     const chatContainer = document.getElementById('right-panel-container'); // 获取聊天容器
     const onlyofficeViewer = document.getElementById('onlyoffice-viewer'); // 新增：获取在线编辑视图
+    const collapseLeftBtn = document.getElementById('collapse-left');
+    const collapseRightBtn = document.getElementById('collapse-right');
     let chatSocket = null; // 聊天专用的 WebSocket
     let current_conversation_id = null; // 用于跟踪当前多轮对话的ID
     // Chat-related DOM elements will be initialized after the component is loaded
@@ -140,7 +142,7 @@
     let isStreaming = false;
     let currentBotMessageElement = null;
     let current_task_id = null;
-
+    let panelState = 'default'; // 可以是 'default', 'left-collapsed', 'right-collapsed'
     // 登录模态框相关元素（已移除）
 
     // Upload Modal DOM elements are now self-contained in upload_form.html
@@ -170,6 +172,52 @@
         setTheme(currentTheme === 'dark' ? 'light' : 'dark');
     });
 
+    function updatePanelLayout() {
+        switch (panelState) {
+            case 'left-collapsed':
+                // 左侧收起 (0%)，右侧占满 (100%)
+                leftPanel.style.flex = '0 0 0%';
+                rightPanel.style.flex = '1 1 100%';
+                leftPanel.style.visibility = 'hidden';
+                rightPanel.style.visibility = 'visible';
+                collapseLeftBtn.innerText = '〈'; // 指向右，表示可展开
+                collapseRightBtn.innerText = '〉'; // 指向左，表示可恢复
+                break;
+            case 'right-collapsed':
+                // 右侧收起 (0%)，左侧占满 (100%)
+                leftPanel.style.flex = '1 1 100%';
+                rightPanel.style.flex = '0 0 0%';
+                leftPanel.style.visibility = 'visible';
+                rightPanel.style.visibility = 'hidden';
+                collapseLeftBtn.innerText = '〈'; // 指向右，表示可恢复
+                collapseRightBtn.innerText = '〉'; // 指向左，表示可展开
+                break;
+            default: // 'default' 状态, 50%/50%
+                leftPanel.style.flex = '1 1 50%';
+                rightPanel.style.flex = '1 1 50%';
+                leftPanel.style.visibility = 'visible';
+                rightPanel.style.visibility = 'visible';
+                collapseLeftBtn.innerText = '〈'; // 指向左，表示可收缩
+                collapseRightBtn.innerText = '〉'; // 指向右，表示可收缩
+                break;
+        }
+        // 触发 resize 事件，通知需要JS计算尺寸的组件（如编辑器、图表）更新其布局
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    collapseLeftBtn.addEventListener('click', () => {
+        // 如果当前是50/50，则收起左边
+        // 如果当前是任何一种收起状态，都恢复为50/50
+        panelState = (panelState === 'default') ? 'left-collapsed' : 'default';
+        updatePanelLayout();
+    });
+
+    collapseRightBtn.addEventListener('click', () => {
+        // 如果当前是50/50，则收起右边
+        // 如果当前是任何一种收起状态，都恢复为50/50
+        panelState = (panelState === 'default') ? 'right-collapsed' : 'default';
+        updatePanelLayout();
+    });
     // --- Viewer Logic from index4.html ---
     function showViewer(type, filename) {
         appState.activeView = type;
@@ -334,7 +382,6 @@
                 const text = await response.text(); // 获取响应文本
                 console.log("后端 /test_button_clicked 端点返回成功:");
                 console.log(text); // 打印到控制台
-                alert("测试按钮点击成功，请查看浏览器控制台日志。");
             } else {
                 const errorText = await response.text();
                 console.error("后端 /test_button_clicked 端点返回错误:", response.status, errorText);
@@ -576,154 +623,77 @@
     }
 
     function updateWorkdirButtonStates() {
-        const openButtons = document.querySelectorAll('.workdir-action-btn.open-file-btn');
-        openButtons.forEach(button => {
-            const filePath = button.dataset.filepath;
-            if (appState.openFiles[filePath]) {
-                button.disabled = true;
-            } else {
-                button.disabled = false;
-            }
-        });
+        if (window.WorkdirManager) {
+            window.WorkdirManager.updateNodeStates(appState.openFiles);
+        }
     }
 
+    // 处理目录更新
     function handleDirectoryUpdate(payload) {
-        const pathElement = document.getElementById('workdir-path');
-        const listElement = document.getElementById('workdir-file-list');
-
-        if (!pathElement || !listElement) {
-            console.error('工作目录视图的必要元素未找到。');
-            return;
+        if (window.WorkdirManager) {
+            window.WorkdirManager.updateData(payload);
         }
-
-        // 更新目录路径并显示视图
-        pathElement.textContent = '当前工作目录: ' + payload.directory;
         showViewer('workdir');
-
-        // 清空旧的文件列表
-        listElement.innerHTML = '';
-
-        // 填充新的文件列表
-        if (payload.files && payload.files.length > 0) {
-            payload.files.forEach(file => {
-                const listItem = document.createElement('li');
-
-                const fileNameSpan = document.createElement('span');
-                fileNameSpan.className = 'file-name';
-
-                let displayPath = file.file_path;
-                const parts = displayPath.split('/');
-
-                // 检查路径是否至少有三个部分（例如 年份/项目名/文件名）
-                // 如果是，则移除前两个部分
-                if (parts.length > 2) {
-                    displayPath = parts.slice(2).join('/');
-                }
-
-                fileNameSpan.textContent = displayPath;
-                fileNameSpan.title = file.file_path; // 提示中仍显示完整路径
-
-                const buttonGroup = document.createElement('div');
-                buttonGroup.className = 'button-group';
-
-                const openButton = document.createElement('button');
-                openButton.textContent = '打开';
-                openButton.className = 'workdir-action-btn open-file-btn';
-                openButton.dataset.token = file.download_token;
-                openButton.dataset.format = file.format;
-                openButton.dataset.filepath = file.file_path;
-
-                const llmReadButton = document.createElement('button');
-                llmReadButton.textContent = 'LLM读取';
-                llmReadButton.className = 'workdir-action-btn llm-read-btn';
-                llmReadButton.dataset.filepath = file.file_path;
-
-                buttonGroup.appendChild(openButton);
-
-                // 新增：仅对特定格式文件显示“编辑”按钮
-                if (['docx', 'xlsx'].includes(file.format)) {
-                    const editButton = document.createElement('button');
-                    editButton.textContent = '编辑';
-                    editButton.className = 'workdir-action-btn edit-file-btn';
-                    editButton.dataset.token = file.download_token;
-                    editButton.dataset.filepath = file.file_path;
-                    buttonGroup.appendChild(editButton);
-                }
-
-                buttonGroup.appendChild(llmReadButton);
-
-                listItem.appendChild(fileNameSpan);
-                listItem.appendChild(buttonGroup);
-                listElement.appendChild(listItem);
-            });
-        } else {
-            const emptyMessage = document.createElement('li');
-            emptyMessage.textContent = '目录为空或不包含文件。';
-            listElement.appendChild(emptyMessage);
-        }
-        // 渲染后，立即更新按钮状态
-        updateWorkdirButtonStates();
     }
 
     // --- Upload Modal Logic (Simplified for Self-Contained Component) ---
     async function showUploadModal() {
         if (!appState.isLoggedIn) {
             alert("请先登录再上传文件。");
-            // 如果未登录，则重定向到登录页面
             window.location.href = '/static/login.html';
             return;
         }
 
         const modalContainer = document.getElementById('upload-modal-container');
-        if (modalContainer.innerHTML.trim() !== '') {
-            const modal = modalContainer.querySelector('.login-modal');
-            if (modal) modal.style.display = 'flex';
-            return;
+
+        // 如果模态框的 HTML 还没加载，则加载它
+        if (modalContainer.innerHTML.trim() === '') {
+            try {
+                const templateResponse = await fetch('/static/upload/upload_standard.html');
+                if (!templateResponse.ok) {
+                    throw new Error(`无法加载上传表单模板: ${templateResponse.statusText}`);
+                }
+                modalContainer.innerHTML = await templateResponse.text();
+
+                // 为新加载的模态框绑定关闭事件
+                const modal = document.getElementById('upload-spec-modal');
+                const closeButton = modal.querySelector('.modal-close-button');
+                modal.addEventListener('click', (event) => {
+                    if (event.target === modal) hideUploadModal();
+                });
+                if(closeButton) {
+                    closeButton.addEventListener('click', hideUploadModal);
+                }
+
+                // JS 脚本 (standard_upload.js) 会自动初始化表单
+                // 手动调用初始化函数
+                if (typeof initStandardUploadForm === 'function') {
+                    initStandardUploadForm();
+                } else {
+                    console.error('initStandardUploadForm function not found.');
+                }
+
+            } catch (error) {
+                console.error('显示上传模块失败:', error);
+                alert(`错误: ${error.message}`);
+                modalContainer.innerHTML = ''; // 清理以备重试
+                return; // 出错则不继续
+            }
         }
 
-        try {
-            // Step 1: Fetch categories data
-            const infoResponse = await fetch('/api/upload-info');
-            if (!infoResponse.ok) {
-                const errorData = await infoResponse.json();
-                throw new Error(errorData.detail || `无法加载上传信息: ${infoResponse.statusText}`);
-            }
-            const infoData = await infoResponse.json();
-
-            // Step 2: Fetch the HTML template
-            const templateResponse = await fetch('/static/upload/upload_form.html');
-            if (!templateResponse.ok) {
-                throw new Error(`无法加载上传表单模板: ${templateResponse.statusText}`);
-            }
-            const formHtml = await templateResponse.text();
-
-            // Step 3: Inject the HTML
-            modalContainer.innerHTML = formHtml;
-
-            // Step 4: Initialize the form with the fetched data
-            // This function is now available from the globally loaded upload_form.js
-            initializeUploadForm(infoData.categories);
-
-            // Step 5: Show the modal and attach closing event listener
-            const modal = document.getElementById('upload-spec-modal');
-            if (modal) {
-                modal.style.display = 'flex';
-                modal.addEventListener('click', (event) => {
-                    if (event.target === modal || event.target.id === 'close-upload-modal-button') {
-                        hideUploadModal();
-                    }
-                });
-            }
-
-        } catch (error) {
-            console.error('显示上传模块失败:', error);
-            alert(`错误: ${error.message}`);
+        // 显示模态框
+        const modal = modalContainer.querySelector('#upload-spec-modal');
+        if (modal) {
+            modal.style.display = 'flex';
         }
     }
 
     function hideUploadModal() {
         const modalContainer = document.getElementById('upload-modal-container');
-        modalContainer.innerHTML = ''; // Remove the modal from the DOM
+        const modal = modalContainer.querySelector('#upload-spec-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
     }
 
     function hideLoginModal() {
@@ -805,6 +775,13 @@
                 const previousSessionId = appState.sessionId;
                 sessionStorage.setItem('session_id', userData.session_id);
                 appState.sessionId = userData.session_id;
+
+                // ✅ 设置用户名到标题中
+                const userNameSpan = document.getElementById("user-name");
+                if (userNameSpan && userData.username) {
+                    userNameSpan.textContent = userData.username;
+                }
+
                 updateLoginStatusUI(true); // 设置为已登录状态
 
                 if (isAfterLoginAttempt && previousSessionId && previousSessionId !== appState.sessionId) {
@@ -845,15 +822,35 @@
         if (!isAfterLoginAttempt && !appState.isLoggedIn) {
              showViewer('placeholder', '请登录以使用我的工作台。');
         } else if (!isAfterLoginAttempt && appState.isLoggedIn) {
-             showViewer('placeholder', '我的工作台已就绪。');
+             // 登录成功后，不再显示“我的工作台已就绪”，而是由 init 函数统一处理
+             // showViewer('placeholder', '我的工作台已就绪。');
         }
         // renderTabs(); // Already called in init
     }
 
-    // --- 右侧面板切换逻辑 ---
+    // --- 面板切换逻辑 ---
     function toggleRightPanelVisibility() {
-        rightPanel.classList.toggle('hidden');
-        leftPanel.classList.toggle('expanded');
+        // 如果左侧面板当前是隐藏的，我们必须先显示它
+        if (leftPanel.classList.contains('hidden')) {
+            leftPanel.classList.remove('hidden');
+            rightPanel.classList.remove('expanded'); // 确保右侧恢复正常大小
+        }
+        // 现在，切换右侧面板的可见性
+        const isRightHidden = rightPanel.classList.toggle('hidden');
+        // 根据右侧面板是否隐藏，来决定是否展开左侧面板
+        leftPanel.classList.toggle('expanded', isRightHidden);
+    }
+
+    function toggleLeftPanelVisibility() {
+        // 如果右侧面板当前是隐藏的，我们必须先显示它
+        if (rightPanel.classList.contains('hidden')) {
+            rightPanel.classList.remove('hidden');
+            leftPanel.classList.remove('expanded'); // 确保左侧恢复正常大小
+        }
+        // 现在，切换左侧面板的可见性
+        const isLeftHidden = leftPanel.classList.toggle('hidden');
+        // 根据左侧面板是否隐藏，来决定是否展开右侧面板
+        rightPanel.classList.toggle('expanded', isLeftHidden);
     }
 
     // --- 右侧面板标签页逻辑 (全局作用域) ---
@@ -881,15 +878,63 @@
         }
     }
 
+    async function loadWorkdirViewer() {
+        try {
+            const response = await fetch('/static/workdir/workdir_viewer.html');
+            if (!response.ok) throw new Error('Failed to load workdir viewer HTML');
+            const html = await response.text();
+            workdirViewer.innerHTML = html;
+
+            const script = document.createElement('script');
+            script.src = '/static/workdir/workdir_viewer.js';
+            script.onload = () => {
+                console.log("WorkdirManager script loaded.");
+                if (window.WorkdirManager) {
+                    window.WorkdirManager.initialize('#file-tree-container', {
+                        open: handleFileOpenRequest,
+                        edit: openFileInOnlyOffice,
+                        llmRead: (filePath) => {
+                            const query = `请读取文件，路径是 ${filePath}`;
+                            botui_addMessage(query, 'user');
+                            botui_streamMessageViaWebSocket(query);
+                        },
+                        // 新增：提供一个刷新文件列表的回调
+                        refresh: async () => {
+                            try {
+                                // 这个请求会通过WebSocket触发一个directory_update事件
+                                const response = await fetch('/api/projects/search');
+                                if (!response.ok) {
+                                     throw new Error('Failed to trigger directory refresh');
+                                }
+                                const data = await response.json();
+                                // 直接使用返回的数据更新视图
+                                if (window.WorkdirManager) {
+                                    window.WorkdirManager.updateData(data.files);
+                                }
+                            } catch (error) {
+                                console.error("Failed to refresh workdir:", error);
+                                alert("刷新工作目录失败。");
+                            }
+                        }
+                    });
+                }
+            };
+            document.body.appendChild(script);
+        } catch (error) {
+            console.error('Error loading workdir viewer:', error);
+            workdirViewer.innerHTML = '<p>Error loading file tree.</p>';
+        }
+    }
+
     async function init() {
         setTheme(getPreferredTheme());
-        await loadChatComponent(); // 加载聊天组件
+        await Promise.all([
+            loadChatComponent(),
+            loadWorkdirViewer()
+        ]);
 
-        // 切换面板按钮的事件监听
-        const toggleRightPanelButton = document.getElementById('toggle-right-panel-button');
-        if (toggleRightPanelButton) {
-            toggleRightPanelButton.addEventListener('click', toggleRightPanelVisibility);
-        }
+        // 新增：为红色区域中的新切换按钮添加事件监听
+
 
         // 测试按钮的事件监听
         const testOnlyOfficeButton = document.getElementById('test-onlyoffice-button');
@@ -919,38 +964,18 @@
             }
         });
 
-        // 使用事件委托处理文件打开和LLM读取按钮的点击
-        document.addEventListener('click', function(event) {
-            const button = event.target;
-            if (button && button.classList.contains('open-file-btn')) {
-                const fileInfo = {
-                    filename: button.dataset.filepath, // 使用完整路径作为唯一标识
-                    download_token: button.dataset.token,
-                    format: button.dataset.format
-                };
-                handleFileOpenRequest(fileInfo);
-            } else if (button && button.classList.contains('llm-read-btn')) {
-                const filePath = button.dataset.filepath;
-                if (filePath) {
-                    const query = `请读取文件，路径是 ${filePath}`;
-                    // 直接调用聊天函数
-                    botui_addMessage(query, 'user');
-                    botui_streamMessageViaWebSocket(query);
-                }
-            } else if (button && button.classList.contains('edit-file-btn')) { // 新增：处理编辑按钮点击
-                const filePath = button.dataset.filepath;
-                const fileToken = button.dataset.token;
-                if (filePath && fileToken) {
-                    openFileInOnlyOffice(filePath, fileToken);
-                }
-            }
-        });
-
-        // 登录模态框的HTML和初始化调用已被移除
 
         uploadSpecButton.onclick = showUploadModal; // 为静态上传按钮附加监听器
         await checkLoginStatusAndInitialize();
         renderTabs(); // 初始标签页渲染
+        updatePanelLayout(); // 初始化面板布局
+
+        // 根据登录状态决定默认显示哪个视图
+        if (appState.isLoggedIn) {
+            showViewer('workdir'); // 如果已登录，默认显示工作目录
+        } else {
+            showViewer('placeholder', '请登录以使用我的工作台。'); // 如果未登录，显示登录提示
+        }
     }
 
     // --- ICONS from index4.html ---
@@ -991,6 +1016,22 @@
 
 
     window.addEventListener('load', init);
+
+    // 新增：在浏览器关闭或刷新前自动登出
+    window.addEventListener('beforeunload', function(e) {
+        // 仅当用户已登录时执行
+        if (appState.isLoggedIn) {
+            // 使用 fetch 的 keepalive 选项来确保请求在页面卸载时也能发送
+            // 这是一个异步操作，但 keepalive 确保它会完成
+            fetch('/logout', {
+                method: 'GET',
+                keepalive: true
+            });
+            // 注意：我们在这里不处理UI更新或清理 sessionStorage，
+            // 因为页面即将关闭，这些操作没有意义。
+            // sessionStorage 会在浏览器关闭时自动清除。
+        }
+    });
 
     // UUID 生成函数，用于兼容不支持 crypto.randomUUID 的环境
     function generateUUID() {

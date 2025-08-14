@@ -6,6 +6,7 @@ from fastapi import Form, File
 from starlette.datastructures import UploadFile
 from uuid import uuid4, UUID
 from datetime import datetime
+from pathlib import Path
 
 class DocType(Enum):
     """文档类型枚举"""
@@ -13,55 +14,67 @@ class DocType(Enum):
     MANAGEMENT = "management"  # 管理
     PROJECT = "project"        # 项目
 
+# --- 文件上传模型 ---
 class UploadType(str, Enum):
     """上传类型枚举"""
     FILE = "file"
     DIRECTORY = "directory"
 
-from pathlib import Path
+# class SpecUploadForm:
+#     """
+#     规程上传表单的数据模型.
+#     使用 Depends 来处理 multipart/form-data.
+#     """
+#     def __init__(
+#         self,
+#         category: str = Form(...),
+#         spec_name: str = Form(...),
+#         upload_type: UploadType = Form(...),
+#         overwrite: bool = Form(False),
+#         files: List[UploadFile] = File(...),
+#         file_paths: List[str] = Form(...)
+#     ):
+#         self.category = category
+#         self.spec_name = spec_name
+#         self.upload_type = upload_type
+#         self.overwrite = overwrite
+#         self.files = files
+#         self.file_paths = file_paths
 
-class SpecUploadForm:
-    """
-    规程上传表单的数据模型.
-    使用 Depends 来处理 multipart/form-data.
-    """
-    def __init__(
-        self,
-        category: str = Form(...),
-        spec_name: str = Form(...),
-        upload_type: UploadType = Form(...),
-        overwrite: bool = Form(False),
-        files: List[UploadFile] = File(...),
-        file_paths: List[str] = Form(...)
-    ):
-        self.category = category
-        self.spec_name = spec_name
-        self.upload_type = upload_type
-        self.overwrite = overwrite
-        self.files = files
-        self.file_paths = file_paths
+# class ProjectUploadForm:
+#     """
+#     项目文件上传表单的数据模型.
+#     """
+#     def __init__(
+#         self,
+#         year: str = Form(...),
+#         project_name: str = Form(...),
+#         project_type: str = Form(...), # '送审' or '收口'
+#         upload_type: UploadType = Form(...),
+#         overwrite: bool = Form(False),
+#         files: List[UploadFile] = File(...),
+#         file_paths: List[str] = Form(...)
+#     ):
+#         self.year = year
+#         self.project_name = project_name
+#         self.project_type = project_type
+#         self.upload_type = upload_type
+#         self.overwrite = overwrite
+#         self.files = files
+#         self.file_paths = file_paths
 
-class ProjectUploadForm:
-    """
-    项目文件上传表单的数据模型.
-    """
-    def __init__(
-        self,
-        year: str = Form(...),
-        project_name: str = Form(...),
-        project_type: str = Form(...), # '送审' or '收口'
-        upload_type: UploadType = Form(...),
-        overwrite: bool = Form(False),
-        files: List[UploadFile] = File(...),
-        file_paths: List[str] = Form(...)
-    ):
-        self.year = year
-        self.project_name = project_name
-        self.project_type = project_type
-        self.upload_type = upload_type
-        self.overwrite = overwrite
-        self.files = files
-        self.file_paths = file_paths
+class SpecUploadForm(BaseModel):
+    """规程上传表单的 Pydantic 模型（仅元数据）"""
+    category: str = Field(..., description="规程分类")
+    spec_name: str = Field(..., description="规程名称")
+    overwrite: bool = Field(False, description="是否覆盖现有文件")
+
+class ProjectUploadForm(BaseModel):
+    """项目文件上传表单的 Pydantic 模型（仅元数据）"""
+    year: str = Field(..., description="项目年份")
+    project_name: str = Field(..., description="项目名称")
+    project_type: str = Field(..., description="项目类型，如 '送审' 或 '收口'")
+    overwrite: bool = Field(False, description="是否覆盖现有文件")
 
 
 # openai completion 接口

@@ -9,12 +9,15 @@ from docx.document import Document as DocxDocument  # ✅ 仅用于类型判断
 from docx.table import _Cell
 from docx.text.paragraph import Paragraph
 from docx.table import Table
-
+import logging
 
 from loguru import logger # 使用 Loguru logger
 
 # 注意：Loguru logger 通常在主应用程序 (例如 server_v6.py) 中配置。
 # file_parser.py 直接使用导入的 logger 实例。
+
+# 设置 pdfminer 的日志等级为 WARNING 或 ERROR 防止出现CropBox missing from /Page, defaulting to MediaBox
+
 
 def get_xlsx_sheet_names(file_path: Union[str,Path]) -> List[str]:
     """
@@ -101,7 +104,8 @@ def parse_pdf(file_path: Union[str,Path], table_delimiter: str = "\t", max_pages
     # pdfplumber 依赖 pdfminer.six，后者可能产生一些 INFO 级别的日志。
     # 如果 server_v6.py 中的 Loguru 配置级别高于 INFO，这些日志可能不会显示。
     # 若要完全静默 pdfminer，可以取消下一行的注释，但这通常由主应用的日志配置控制。
-    # logging.getLogger("pdfminer").setLevel(logging.ERROR) # 已在原始代码中，保持
+    logging.getLogger("pdfminer").setLevel(logging.ERROR) # 已在原始代码中，保持
+
     try:
         with pdfplumber.open(file_path) as pdf:
             for i, page in enumerate(pdf.pages):

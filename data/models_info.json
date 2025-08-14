@@ -1,0 +1,52 @@
+{
+    "kimi":
+    {
+        "url":"https://api.moonshot.cn/v1",
+        "apikey":"sk-7GUfyabVxWR9iTurMSCfd3Ln3aFF8DMgmOj8M2N40XLlXvEL",
+        "models":["kimi-k2-0711-preview"]
+    },
+    "qwen":
+    {
+        "url":"https://dashscope.aliyuncs.com/compatible-mode/v1",
+        "apikey":"sk-15922445162f4876897274bb5fd51779",
+        "models":["qwen3-235b-a22b-instruct-2507"]
+    },
+    "gemini":
+    {
+        "url":"https://generativelanguage.googleapis.com/v1beta/openai/",
+        "apikey":"AIzaSyCO_s4PIgu8r1NTVbJIH6VC5L4jpe6WIKw",
+        "models":["gemini-2.5-flash"]
+    },
+    "deepseek":
+    {
+        "url":"https://api.deepseek.com",
+        "apikey":"sk-2c88c5a7c32f4750a27467a8ba12065f",
+        "models":["deepseek-chat","deepseek-reasoner"]
+    },
+    "tencent":
+    {
+        "url":"https://api.hunyuan.cloud.tencent.com/v1",
+        "apikey":"sk-czZ0vKyMAW20YFvhlhn9E7CrkrFCEzklYP52NbM0aBtLzI0G",
+        "models":["hunyuan-t1-20250711"]
+    },
+    "minimax":
+    {
+        "url": "https://api.minimaxi.com/v1",
+        "apikey": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJHcm91cE5hbWUiOiJ6eCIsIlVzZXJOYW1lIjoiengiLCJBY2NvdW50IjoiIiwiU3ViamVjdElEIjoiMTkzNDYzNjU5NTczMDcxODc1MSIsIlBob25lIjoiMTM3NzY2NTMyMTkiLCJHcm91cElEIjoiMTkzNDYzNjU5NTcyMjMzMDE0MyIsIlBhZ2VOYW1lIjoiIiwiTWFpbCI6IiIsIkNyZWF0ZVRpbWUiOiIyMDI1LTA2LTE3IDA3OjM2OjQ5IiwiVG9rZW5UeXBlIjoxLCJpc3MiOiJtaW5pbWF4In0.Ff-rkmKGz8JcrxKVUr-afAHAQbWZ9Gqy4Jc9PhvYvehxZ7OfGBm7H1ePby7Jde_TkUUnfN4M3XfjEzG0gDbMNCmk0sm5Q_pzVOK_HIU8midFOX-joIlXJmkG-qgrjKrV9HaaYkVUJe5tSt_KKr7NQh0jIQYKCnEtufCQNpOlgn2u39juLh9oz0VL2G6o5wiHr_Zxs8RC2wI_2eszbaS6f3YVrJytwc1NXv8F6UNz8cTi-aEpBVjnvM5d7T602Jvt5s4HmIUnz7vv0qYLZaONbQoT2dFiGF_MSmh1gy4pPH4FcUcMmP2aBG2lyH8wIwvIlROSSEkYxJDDE28bnj92UA",
+        "models": [
+            "MiniMax-Text-01"
+        ]
+    },
+    "openai(lmstudio)":
+    {
+        "url":"http://[240e:3a1:7d0:ab80::e7]:1234/v1",
+        "apikey":"",
+        "models":["openai/gpt-oss-20b"]
+    },
+    "zhipu":
+    {
+        "url":"https://open.bigmodel.cn/api/paas/v4/",
+        "apikey":"6ded324ebcba476198798c1bfacd4de7.th1dsWCYlGjWYj8a",
+        "models":["GLM-4.5-Flash","GLM-4.5-Air"]
+    }
+}

@@ -231,3 +231,25 @@ PORT 8080:80
 JWT：
 6955cd123336471f917122f777e35f227f97d2c7bfa1f54612cbac3d73d11995
 
+检查下upload.py 中的项目上传逻辑，修改必要的代码，确保按以下逻辑工作：
+1. 当用户在前端选择一个目录后，比如"ABC项目"，点击上传后，后端的保存目录为 project_root/<year>/ABC项目/送审/<前端上传的ABC项目的所有原始文件和目录>，
+同时创建 project_root/<year>/ABC项目/收口 和 project_root/<year>/ABC项目/过程文件 这两个空目录
+2. 当后端有相同的目录存在，在前端要提示是否合并和覆盖。
+3. 使用file_service实现文件在后端创建、复制、移动操作
+4. 前端年份使用下拉列表，从2010-2030，前端的js 在 workdir_viewer.js
+
+
+在mate30 上 安装 termux，可以运行python脚本及ssh
+其他辅助工具：
+pkg install termux-wake-lock
+点击华为版本7次，进入开发者模式
+让termux插电后可以持续后台运行
+pkg install python-cryptography -y
+pip install netifaces
+pip install loguru
+
+研究下mcp_tools.py，route.py以及session.py，评估下重构update_opened_file和update_opened_dir的逻辑，我初步考虑将token生成放到session内部去处理
+，调用者仅提供文件路径、dir路径，项目名称，文档类型，用户名即可，pdate_opened_file和update_opened_dir分别返回fileEntry、dirEntry对象，
+对于mcp_tools.py，有个包装函数，适当的处理下逻辑。让它返回mcp工具所需要的信息，然后让mcp工具返回给调用者。
+
+docker compose -f docker-compose-document.yml up -d

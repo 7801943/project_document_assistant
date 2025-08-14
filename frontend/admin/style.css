@@ -1,0 +1,166 @@
+/* style.css */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 0;
+    background-color: #f4f7f9;
+    color: #333;
+    display: flex;
+    height: 100vh;
+}
+
+.container {
+    display: flex;
+    width: 100%;
+}
+
+.sidebar {
+    width: 240px;
+    background-color: #ffffff;
+    border-right: 1px solid #e0e0e0;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+.sidebar h2 {
+    font-size: 1.2em;
+    color: #1a73e8;
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar nav li {
+    padding: 12px 15px;
+    cursor: pointer;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+}
+
+.sidebar nav li:hover {
+    background-color: #f0f4f8;
+}
+
+.sidebar nav li.active {
+    background-color: #1a73e8;
+    color: white;
+    font-weight: bold;
+}
+
+.content {
+    flex-grow: 1;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+.content header h1 {
+    font-size: 1.8em;
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 25px;
+}
+
+#config-form-container fieldset {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    background-color: #fff;
+}
+
+#config-form-container legend {
+    font-weight: bold;
+    font-size: 1.1em;
+    padding: 0 10px;
+    color: #1a73e8;
+}
+
+.form-group {
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    width: 250px;
+    flex-shrink: 0;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="url"],
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+.form-group textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.form-group input[type="checkbox"] {
+    margin-left: 10px;
+    width: auto;
+}
+
+footer {
+    margin-top: 30px;
+    text-align: right;
+}
+
+#save-button {
+    padding: 12px 25px;
+    background-color: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+#save-button:hover {
+    background-color: #155ab6;
+}
+
+/* 消息提示条 */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 5px;
+    color: white;
+    font-size: 1em;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.5s, transform 0.5s;
+    transform: translateY(-20px);
+}
+
+.toast-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-notification.success {
+    background-color: #28a745;
+}
+
+.toast-notification.error {
+    background-color: #dc3545;
+}

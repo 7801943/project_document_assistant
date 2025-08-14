@@ -4,14 +4,14 @@ from pathlib import Path
 import time
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict, Any, Union, Tuple
-
+import uuid
 
 from fastapi import WebSocket
 from loguru import logger
 from config import settings
 
 from core.data_model import DocType
-
+from utils.utils import calculate_md5
 
 @dataclass
 class FileEntry:
@@ -57,7 +57,8 @@ class UserSessionData:
     login_time_str: str
     last_activity_time: float  # HTTP活动的最后时间
     last_activity_time_str: str
-    editing_file: dict[str,str] = field(default_factory= lambda: {"key":"","file_path":""})
+    # --- 统一 'key' 为 'file_key' ---
+    editing_file: dict[str,str] = field(default_factory= lambda: {"user_id":uuid.uuid4().hex[0:8], "file_key":"","file_path":""})
     is_websocket_connected: bool = False
     websocket: Optional[WebSocket] = None  # 直接持有WebSocket对象
     working_directory: Optional[DirEntry] = None # 修复：DirEntry需要参数，不能用default_factory
@@ -71,6 +72,7 @@ class SessionStateManager:
     此类合并了原有的 ConnectionManager 的功能。
     """
     def __init__(self, inactivity_timeout: int):
+        # Dict[用户名，会话数据]
         self._user_sessions: Dict[str, UserSessionData] = {}
         self._lock = asyncio.Lock()
         self._inactivity_timeout = inactivity_timeout
@@ -147,9 +149,9 @@ class SessionStateManager:
         async with self._lock:
             if username in self._user_sessions:
                 user_data = self._user_sessions.pop(username)
-                logger.info(f"用户 '{username}' (会话: {user_data.session_id}) 已从状态管理器登出。")
+                logger.debug(f"用户 '{username}' (会话: {user_data.session_id}) 已从状态管理器登出。")
                 if user_data.websocket:
-                    logger.info(f"用户 '{username}' 登出时，其WebSocket连接处于活动状态，将尝试关闭。")
+                    logger.debug(f"用户 '{username}' 登出时，其WebSocket连接处于活动状态，将尝试关闭。")
                     try:
                         await user_data.websocket.close(code=1000, reason="用户已登出")
                     except Exception as e:
@@ -184,146 +186,224 @@ class SessionStateManager:
                 user_data.last_activity_time_str = time.ctime(current_time)
                 logger.trace(f"用户 '{username}' HTTP 活动已记录，last_activity_time 更新为: {user_data.last_activity_time_str}。")
 
+    async def clear_working_directory(self, username: str):
+        """清空指定用户的当前工作目录信息。"""
+        async with self._lock:
+            user_data = self._user_sessions.get(username)
+            if user_data:
+                if user_data.working_directory:
+                    logger.info(f"正在为用户 '{username}' 清理工作目录 '{user_data.working_directory.directory}'。")
+                    user_data.working_directory = None
+                else:
+                    logger.debug(f"用户 '{username}' 没有需要清理的工作目录。")
+            else:
+                logger.warning(f"尝试为一个不存在的用户 '{username}' 清理工作目录。")
+
     # --- 文件相关操作 ---
-    async def set_edited_file(self, user:str, key: str, file_path:str) -> bool:
+    async def set_edited_file(self, user:str, file_key: str, file_path:str) -> bool:
         async with self._lock:
             user_session_data = self._user_sessions.get(user)
             if not user_session_data:
                 logger.error(f"错误：尝试为未知用户 '{user}' 执行文件编辑注册'。")
                 return False
-            user_session_data.editing_file['key'] = key
+            user_session_data.editing_file['file_key'] = file_key
             user_session_data.editing_file['file_path'] = file_path
-            logger.info(f"成功为文件{file_path}进行编辑注册,key:{key}")
+            logger.debug(f"成功为文件{file_path}进行编辑注册,file_key:{file_key}")
             return True
 
-        # --- 文件相关操作 ---
-    async def get_edited_file(self, key:str) -> str:
+    async def get_editing_file(self, file_key:str) -> str:
         async with self._lock:
             for username, user_data in self._user_sessions.items():
-                if user_data.editing_file['key'] == key:
+                if user_data.editing_file.get('file_key') == file_key:
                     result = user_data.editing_file['file_path']
-                    logger.info(f"成功获取文件编辑key:{key},文件路径:{result}")
+                    logger.debug(f"成功获取文件编辑file_key:{file_key},文件路径:{result}")
                     return result
 
             # 用户会话中未找到key
-            logger.error(f"错误：未在任何用户会话数据中找到key:{key}，无法文件路径")
+            logger.error(f"错误：未在任何用户会话数据中找到file_key:{file_key}，无法获取文件路径")
             return ""
 
-    async def remove_edited_file(self, key:str):
+    async def register_editing_file(self, user:str, file_path:str, doc_type:DocType) -> Tuple[Optional[str], Optional[str]]:
+        """
+        为协同编辑注册文件。
+        如果文件已在编辑中，则复用现有的file_key；否则创建新key。
+        为每个加入的用户返回一个唯一的user_id和共享的file_key。
+        """
+        async with self._lock:
+            file_key = ""
+            # 1. 查找是否已有其他用户在编辑此文件
+            for username, user_data in self._user_sessions.items():
+                if user_data.editing_file.get('file_path') == file_path:
+                    file_key = user_data.editing_file.get('file_key', "")
+                    if file_key:
+                        logger.debug(f"文件 '{file_path}' 已在编辑中，复用 file_key: {file_key}")
+                        break
+
+            # 2. 为当前用户注册编辑信息
+            current_user_data = self._user_sessions.get(user)
+            if not current_user_data:
+                logger.warning(f"错误：注册新的编辑文件失败，用户名 '{user}' 无效")
+                return None, None
+
+            # 3. 分配 user_id 和 file_key
+            user_id = uuid.uuid4().hex[0:8] # 为每个协作者生成唯一的ID
+            if not file_key:
+                file_key = uuid.uuid4().hex[0:12] # 如果是第一个编辑者，创建新的key
+                logger.debug(f"文件 '{file_path}' 的新编辑会话开始，生成新 file_key: {file_key}")
+
+            current_user_data.editing_file['file_path'] = file_path
+            current_user_data.editing_file['user_id'] = user_id
+            current_user_data.editing_file['file_key'] = file_key
+
+            logger.debug(f"注册编辑文件成功, user:'{user}', user_id:'{user_id}', file_path:'{file_path}', file_key:'{file_key}'")
+            return user_id, file_key
+
+    async def remove_edited_file(self, file_key:str):
         async with self._lock:
             for username, user_data in self._user_sessions.items():
-                if user_data.editing_file['key'] == key:
-                    logger.info(f"成功为用户{username}移除文件编辑key:{key},文件路径:{user_data.editing_file['file_path']}")
-                    user_data.editing_file['key'] = ""
+                if user_data.editing_file.get('file_key') == file_key:
+                    logger.info(f"为用户 '{username}' 移除文件编辑状态 (file_key: {file_key}, path: {user_data.editing_file.get('file_path')})")
+                    # 清除该用户的编辑状态。在多人场景下，其他用户的状态不受影响。
+                    # 注意：这依赖于OnlyOffice回调机制。当文档最终保存时，可能需要一个更集中的方式来清理所有相关的编辑状态。
+                    user_data.editing_file['file_key'] = ""
                     user_data.editing_file['file_path'] = ""
-                    return
-            logger.error(f"错误：未在任何用户会话数据中找到key:{key}，无法移除")
+                    # 这里只清除了一个用户的状态，如果需要可以返回，但目前不需要
+            # logger.warning(f"未在任何用户会话数据中找到file_key:{file_key}，无法移除。这在多人关闭时是正常现象。")
 
-    # llm_opend 必须有默认参数，否则在声明时必须放到所有参数之前
-    async def update_opened_file(self, user:str, token: str, relative_file_path: Union[Path,str], llm_opened: bool, document_type:DocType):
-        '''
-        # 更新用户打开的文件
-        # 通过socket发送请求
-        '''
+    async def update_opened_file(self, user: str, relative_file_path: Union[Path, str], llm_opened: bool, document_type: DocType) -> Optional[FileEntry]:
+        """
+        [重构后] 更新用户打开的单个文件，在内部生成token，并返回创建的FileEntry。
+        调用者仅需提供文件路径等基本信息。
+
+        Args:
+            user (str): 用户名。
+            relative_file_path (Union[Path, str]): 文件的相对路径。
+            llm_opened (bool): 文件是否由LLM打开。
+            document_type (DocType): 文档类型。
+
+        Returns:
+            Optional[FileEntry]: 成功时返回创建的文件条目对象，失败则返回None。
+        """
         async with self._lock:
             user_data = self._user_sessions.get(user)
             if not user_data:
                 logger.warning(f"尝试为未知用户 '{user}' 注册已打开文件 '{relative_file_path}'。")
-                return
+                return None
 
+            # 内部生成token
+            token = uuid.uuid4().hex
             current_time = time.time()
             expires_time = current_time + settings.DOWNLOAD_LINK_VALIDITY_SECONDS
 
+            # 创建文件条目
             file_entry = FileEntry(
-                file_path = str(relative_file_path),
-                token = token,
-                opened_by_llm = llm_opened,
-                # 其实要依赖与前后端正确工作
-                opened_by_user= True,
-                expire_at = expires_time,
-                doc_type = document_type
+                file_path=str(relative_file_path),
+                token=token,
+                opened_by_llm=llm_opened,
+                opened_by_user=True,  # 假设立即被用户打开
+                expire_at=expires_time,
+                doc_type=document_type
             )
-            # 暂不考虑重复
+            
+            # 将文件条目添加到用户的会话数据中
             user_data.working_files.append(file_entry)
             logger.info(f"用户 '{user}' 已打开文件 '{relative_file_path}' (token: {token}), 有效期至: {time.ctime(expires_time)}")
-            # 通过socket发送文件打开请求
+
+            # 通过WebSocket通知前端
             if user_data.is_websocket_connected and user_data.websocket:
                 file_basename = os.path.basename(relative_file_path)
                 file_format = file_basename.split('.')[-1].lower() if '.' in file_basename else 'txt'
-                await user_data.websocket.send_json({
-                    "type": "file_open_request",
-                    "payload": {
-                        "filename": str(relative_file_path),
-                        "download_token": token,
-                        "format": file_format
-                    }
-                })
+                try:
+                    await user_data.websocket.send_json({
+                        "type": "file_open_request",
+                        "payload": {
+                            "filename": str(relative_file_path),
+                            "download_token": token,
+                            "format": file_format
+                        }
+                    })
+                except Exception as e:
+                    logger.error(f"向用户 '{user}' 发送WebSocket文件打开消息时出错: {e}", exc_info=True)
             else:
                 logger.warning(f"用户 '{user}' 的WebSocket未连接，无法发送文件打开通知。")
+            
+            # 返回创建的文件条目，包含新生成的token
+            return file_entry
 
-    async def update_opened_dir(self, user: str, dir_path: str, dir_token: str, files_with_token: List[Tuple[str, str]]):
+    async def update_opened_dir(self, user: str, dir_path: str, files: List[str]) -> Optional[DirEntry]:
         """
-        新增或完全覆盖用户的整个工作目录视图。
-        这个操作是破坏性的，会替换掉旧的目录和文件列表。
+        [重构后] 新增或完全覆盖用户的整个工作目录视图。
+        此方法在内部生成目录和文件的token，并返回创建的DirEntry。
+
+        Args:
+            user (str): 用户名。
+            dir_path (str): 目录的路径。
+            files (List[str]): 目录下的文件相对路径列表。
+
+        Returns:
+            Optional[DirEntry]: 成功时返回创建的目录条目对象，失败则返回None。
         """
         async with self._lock:
             user_data = self._user_sessions.get(user)
             if not user_data:
                 logger.warning(f"尝试为未知用户 '{user}' 更新工作目录 '{dir_path}'。")
-                return
+                return None
 
             current_time = time.time()
             expires_time = current_time + settings.DOWNLOAD_LINK_VALIDITY_SECONDS
+            
+            # 内部生成目录token
+            dir_token = uuid.uuid4().hex
 
-            # 1. 根据传入的文件列表，创建FileEntry对象
+            # 为每个文件创建FileEntry并生成token
             file_entries = []
-            for file_path, file_token in files_with_token:
+            for file_path in files:
                 entry = FileEntry(
                     file_path=str(file_path),
-                    token=file_token,
-                    opened_by_llm=False,  # 假设由LLM打开
-                    opened_by_user=False, # 等待前端确认
+                    token=uuid.uuid4().hex, # 内部生成文件token
+                    opened_by_llm=False,
+                    opened_by_user=False,
                     expire_at=expires_time,
-                    doc_type= DocType.PROJECT # 目录打开暂时只考虑项目文件
+                    doc_type=DocType.PROJECT
                 )
                 file_entries.append(entry)
 
-            # 2. 创建一个新的DirEntry对象，并用它覆盖旧的
+            # 创建新的目录条目
             new_dir_entry = DirEntry(
                 directory=dir_path,
                 directory_token=dir_token,
-                expire_at=expires_time, # 目录的token也设置过期时间
+                expire_at=expires_time,
                 files=file_entries
             )
             user_data.working_directory = new_dir_entry
-
             logger.info(f"用户 '{user}' 的工作目录已更新为 '{dir_path}'，包含 {len(file_entries)} 个文件。")
 
             # 通过WebSocket通知前端更新整个目录视图
             if user_data.is_websocket_connected and user_data.websocket:
-                # 构造前端需要的文件列表
-                files_payload = []
-                for entry in file_entries:
-                    file_basename = os.path.basename(entry.file_path)
-                    file_format = file_basename.split('.')[-1].lower() if '.' in file_basename else 'txt'
-                    files_payload.append({
-                        "filename": file_basename,
-                        "file_path": entry.file_path,
-                        "download_token": entry.token,
-                        "format": file_format
-                    })
+                files_payload = [{
+                    "filename": os.path.basename(entry.file_path),
+                    "file_path": entry.file_path,
+                    "download_token": entry.token,
+                    "format": os.path.basename(entry.file_path).split('.')[-1].lower() if '.' in os.path.basename(entry.file_path) else 'txt'
+                } for entry in file_entries]
 
-                await user_data.websocket.send_json({
-                    "type": "directory_update", # 使用新的类型
-                    "payload": {
-                        "directory": dir_path,
-                        "directory_token": dir_token,
-                        "files": files_payload
-                    }
-                })
-                logger.info(f"已向用户 '{user}' 发送工作目录更新通知。")
+                try:
+                    await user_data.websocket.send_json({
+                        "type": "directory_update",
+                        "payload": {
+                            "directory": dir_path,
+                            "directory_token": dir_token,
+                            "files": files_payload
+                        }
+                    })
+                    logger.info(f"已向用户 '{user}' 发送工作目录更新通知。")
+                except Exception as e:
+                    logger.error(f"向用户 '{user}' 发送WebSocket目录更新消息时出错: {e}", exc_info=True)
             else:
                 logger.warning(f"用户 '{user}' 的WebSocket未连接，无法发送目录更新通知。")
+            
+            # 返回创建的目录条目，包含所有新生成的token
+            return new_dir_entry
 
     async def get_downloadable_file_info(self, token_to_find: str) -> Optional[Dict[str, Any]]:
         """根据token查找有效的、未过期的可下载文件信息。"""
@@ -334,7 +414,7 @@ class SessionStateManager:
                     found_entry = next((entry for entry in user_data.working_files if entry.token == token_to_find), None)
                     if found_entry:
                         filename = os.path.basename(found_entry.file_path)
-                        logger.info(f"下载token '{token_to_find}' (文件: {filename}, 用户: {username}) 在 working_files 中验证成功。")
+                        # logger.info(f"下载token '{token_to_find}' (文件: {filename}, 用户: {username}) 在 working_files 中验证成功。")
                         if found_entry.doc_type == DocType.PROJECT:
                             absolute_path = os.path.join(settings.PROJECTS_ROOT_DIR, found_entry.file_path)
                         elif found_entry.doc_type == DocType.STANDARD:
@@ -443,6 +523,7 @@ class SessionStateManager:
                     "is_websocket_connected": udata.is_websocket_connected,
                     "has_websocket_object": udata.websocket is not None,
                     "opened_files_count": len(udata.working_files),
-                    "working_directory": working_dir_info
+                    "working_directory": working_dir_info,
+                    "editing_file": udata.editing_file
                 }
             return debug_data

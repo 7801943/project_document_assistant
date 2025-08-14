@@ -27,11 +27,11 @@
 }
 html[data-theme='dark'] {
     --primary-color: #0d6efd;
-    --bg-color: #121212; /* index4 dark bg */
-    --rgb-bg-color: 18, 18, 18;
-    --panel-color: #1e1e1e; /* index4 dark panel */
-    --rgb-panel-color: 30, 30, 30;
-    --border-color: #343a40;
+    --bg-color: #2B2B2B; /* index4 dark bg - 根据用户要求调亮 */
+    --rgb-bg-color: 43, 43, 43;
+    --panel-color: #3C3C3C; /* index4 dark panel - 根据用户要求调亮 */
+    --rgb-panel-color: 60, 60, 60;
+    --border-color: #4A4A4A; /* 适配新的面板颜色 */
     --text-primary: #e9ecef;
     --text-secondary: #adb5bd;
     --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.15);
@@ -61,7 +61,7 @@ body, html { /* This body style is from index4.html, botui.html's body style is 
 .app-header {
     display: flex; justify-content: space-between; align-items: center;
     height: var(--header-height); padding: 0 24px;
-    background-color: var(--panel-color);
+    background-color: var(--bg-color); /* Changed from --panel-color to match user request */
     border-bottom: 1px solid var(--border-color);
     flex-shrink: 0; transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
     box-shadow: var(--shadow-sm); /* 添加阴影 */
@@ -100,22 +100,25 @@ html[data-theme='dark'] .theme-toggle-button .moon-icon { display: block; }
 .auth-button.logout:hover { background-color: #bb2d3b; /* 更深的红色 */ color: white; }
 
 
-.main-container { display: flex; height: calc(100vh - var(--header-height)); }
-.left-panel {
-    flex: 0 0 50%; /* 默认占据50%宽度 */
+.main-container {
+    display: flex;
+    flex-direction: row; /* 确保是行布局 */
+    height: calc(100vh - var(--header-height));
+}
+.left-panel, .right-panel {
     display: flex;
     flex-direction: column;
     background-color: var(--panel-color);
-    transition: background-color 0.3s, border-color 0.3s, flex-basis 0.3s ease;
+    transition: flex 0.3s ease-in-out, visibility 0.3s, background-color 0.3s, border-color 0.3s;
+    overflow: hidden; /* 防止内容在过渡期间溢出 */
+}
+.left-panel {
+    flex: 1 1 50%; /* 默认50% */
+    border-right: 1px solid var(--border-color);
 }
 .right-panel {
-    flex: 0 0 50%; /* 默认占据50%宽度 */
-    display: flex;
-    flex-direction: column;
-    background-color: var(--panel-color);
-    border-left: 1px solid var(--border-color); /* 分隔线 */
-    transition: background-color 0.3s, border-color 0.3s, flex-basis 0.3s ease;
-    overflow: hidden; /* 隐藏溢出内容 */
+    flex: 1 1 50%; /* 默认50% */
+    border-left: none; /* 移除左边框，因为左面板已有右边框 */
 }
 .right-panel.hidden {
     flex: 0 0 0; /* 隐藏时宽度为0 */
@@ -142,7 +145,7 @@ html[data-theme='dark'] .theme-toggle-button .moon-icon { display: block; }
     overflow: hidden;
 }
 .tab-navigation {
-    display: flex; flex-shrink: 0; overflow-x: auto;
+    display: flex; flex-shrink: 0; /* 移除 overflow-x: auto */
     border-bottom: 1px solid var(--border-color);
     padding: 0 16px; background-color: var(--panel-color);
     box-shadow: var(--shadow-sm); /* 添加阴影 */
@@ -150,6 +153,9 @@ html[data-theme='dark'] .theme-toggle-button .moon-icon { display: block; }
 }
 #tab-container { /* 新增样式 */
     display: flex;
+    flex-grow: 1; /* 占据所有剩余空间 */
+    overflow-x: auto; /* 允许自身水平滚动 */
+    overflow-y: hidden; /* 防止垂直滚动 */
 }
 .tab-button {
     display: flex; align-items: center; flex-shrink: 0; gap: 8px; padding: 12px 16px;
@@ -171,7 +177,7 @@ html[data-theme='dark'] .theme-toggle-button .moon-icon { display: block; }
 html[data-theme='light'] .close-tab:hover { background-color: #e9ecef; }
 html[data-theme='dark'] .close-tab:hover { background-color: #343a40; }
 
-.left-panel > .content-viewer { flex-grow: 1; position: relative; overflow: hidden; background-color: var(--bg-color); }
+.left-panel > .content-viewer { flex-grow: 1; position: relative; overflow: hidden; background-color: var(--panel-color); }
 /* #chatbot-iframe style removed as iframe is removed */
 .placeholder { display: flex; justify-content: center; align-items: center; height: 100%; color: var(--text-secondary); flex-direction: column; gap: 10px; }
 
@@ -400,7 +406,7 @@ html[data-theme='dark'] { /* botui.html's dark theme variables, complementing in
     line-height: 1.5;
 }
 #chat-input:focus { outline: none; border-color: var(--color-user-bubble-bg); } /* Uses botui's user bubble color for focus */
-#chat-form button { height: 42px; margin-left: 10px; padding: 10px 20px; background-color: var(--color-user-bubble-bg); color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 16px; transition: opacity 0.2s; }
+#chat-form button { height: 42px; margin-left: 10px; padding: 10px 20px; background-color: var(--color-user-bubble-bg); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; transition: opacity 0.2s; }
 #chat-form button:hover { opacity: 0.8; }
 #chat-form button:disabled {
     background-color: #cccccc;
@@ -420,7 +426,7 @@ html[data-theme='dark'] { /* botui.html's dark theme variables, complementing in
     background-color: var(--color-user-bubble-bg);
     color: white;
     border: none;
-    border-radius: 20px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 16px;
     transition: opacity 0.2s;
@@ -447,7 +453,7 @@ html[data-theme='dark'] { /* botui.html's dark theme variables, complementing in
     padding: 0px 15px; /* Adjusted padding to vertically center text with fixed height */
     height: 42px;    /* Match send button height */
     border: none;
-    border-radius: 20px; /* Match send button */
+    border-radius: 6px; /* Match send button */
     cursor: pointer;
     font-size: 16px;   /* Match send button */
     transition: opacity 0.2s, background-color 0.2s;
@@ -467,90 +473,47 @@ html[data-theme='dark'] { /* botui.html's dark theme variables, complementing in
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1.0); } }
 /* Styles from botui.html - END */
 
-/* Login Modal Styles */
-.login-modal {
-    display: none; /* Hidden by default */
-    position: fixed; /* Stay in place */
-    z-index: 1000; /* Sit on top */
-    left: 0;
+/* Login Modal Styles removed as they are considered redundant */
+
+/* --- Generic Modal Styles --- */
+.modal-overlay {
+    position: fixed;
     top: 0;
-    width: 100%; /* Full width */
-    height: 100%; /* Full height */
-    overflow: auto; /* Enable scroll if needed */
-    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-    /* Flexbox for centering */
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 1000;
 }
-.login-modal-content {
-    background-color: var(--panel-color);
-    color: var(--text-primary);
-    margin: auto; /* Not strictly needed with flex, but good fallback */
-    padding: 30px 40px;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    position: relative;
-    text-align: center;
-}
-.login-modal-content h1 { margin-top: 0; margin-bottom: 25px; font-size: 1.8em; color: var(--text-primary); }
-.login-modal-content .form-group { margin-bottom: 20px; text-align: left; }
-.login-modal-content label { display: block; margin-bottom: 6px; font-weight: 500; color: var(--text-secondary); }
-.login-modal-content input[type="text"],
-.login-modal-content input[type="password"] {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    box-sizing: border-box;
-    background-color: var(--bg-color); /* Use bg-color for inputs */
-    color: var(--text-primary);
-    font-size: 1em;
-}
-.login-modal-content input[type="text"]:focus,
-.login-modal-content input[type="password"]:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(var(--primary-color), 0.25); /* Check primary color format for rgba */
-}
-.login-modal-content .remember-group { display: flex; align-items: center; margin-bottom: 25px; justify-content: flex-start; }
-.login-modal-content .remember-group input[type="checkbox"] { width: auto; margin-right: 8px; }
-.login-modal-content .remember-group label { margin-bottom: 0; font-weight: normal; }
 
-.login-modal-content button[type="submit"] {
-    width: 100%;
-    padding: 12px;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1.1em;
-    font-weight: 500;
-    transition: background-color 0.2s;
+.modal-content {
+    background-color: var(--panel-color);
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
 }
-.login-modal-content button[type="submit"]:hover { background-color: #0b5ed7; /* Darker shade of primary */ }
-.login-modal-content .error-message { color: #dc3545; margin-top: 15px; text-align: center; font-weight: 500; min-height: 1.2em; }
-.close-modal-button {
-    color: var(--text-secondary);
+
+.modal-close-button {
     position: absolute;
     top: 15px;
-    right: 20px;
-    font-size: 28px;
-    font-weight: bold;
-    transition: color 0.2s;
-}
-.close-modal-button:hover,
-.close-modal-button:focus {
-    color: var(--text-primary);
-    text-decoration: none;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--text-secondary);
     cursor: pointer;
 }
+/* --- End Generic Modal Styles --- */
+
 
 /* Upload Modal Styles (reusing login modal styles where possible) */
+/* The specific upload form can now leverage the generic modal styles */
 #upload-spec-modal .form-group {
     margin-bottom: 15px;
 }
@@ -579,4 +542,214 @@ html[data-theme='dark'] { /* botui.html's dark theme variables, complementing in
     margin-top: 5px;
     font-size: 0.9em;
     color: var(--text-secondary);
+}
+
+/* --- 面板伸缩样式 --- */
+.left-panel.hidden, .right-panel.hidden {
+    flex-basis: 0 !important;
+    min-width: 0 !important;
+    overflow: hidden;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.left-panel.expanded, .right-panel.expanded {
+    flex-basis: 100% !important;
+}
+
+#resizer {
+    position: relative;
+    width: 4px; /* 分隔线变细 */
+    background-color: #e0e0e0; /* 淡灰色线条，或用 transparent */
+    cursor: col-resize;
+    z-index: 10;
+  }
+
+  /* 按钮悬浮样式 */
+  #resizer button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width:20px;
+    height:100px;
+    background-color: rgba(0, 123, 255, 0.4); /* 初始半透明灰 */
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 14px;
+    color: #fffcfc;
+    cursor: pointer;
+    opacity: 0.3;
+    transition: all 0.2s ease;
+    box-shadow: none;
+  }
+
+  /* 鼠标悬停效果 */
+  #resizer button:hover {
+    background-color: rgba(0, 123, 255, 0.95);
+    opacity: 1;
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  }
+
+  /* 向左隐藏按钮位置（稍微跨出左边） */
+  #collapse-left {
+    left: -20px;  /* 浮到左边界外一点 */
+  }
+
+  /* 向右隐藏按钮位置（稍微跨出右边） */
+  #collapse-right {
+    right: -20px; /* 浮到右边界外一点 */
+  }
+
+/* Redundant comment removed */
+
+/* --- Workdir and Modal Styles --- */
+.workdir-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+.workdir-toolbar {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+    gap: 10px;
+    flex-shrink: 0;
+}
+.search-container {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 8px;
+    flex-grow: 1; /* 让 search-container 填充剩余空间 */
+}
+#search-input {
+    flex-grow: 1; /* 让搜索输入框填充可用空间 */
+    padding: 6px 10px; /* 保持与按钮的垂直padding一致 */
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--input-bg, var(--bg-color)); /* 确保背景色和文本颜色正确 */
+    color: var(--text-primary);
+}
+.workdir-btn, .workdir-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+.workdir-btn {
+    background-color: var(--button-bg, var(--primary-color));
+    color: var(--button-text-color, white);
+}
+.workdir-btn:hover {
+    background-color: var(--button-hover-bg, #0b5ed7);
+}
+.workdir-btn-secondary {
+    background-color: var(--secondary-button-bg, #6c757d);
+    color: var(--secondary-button-text-color, white);
+    border-color: var(--secondary-button-bg, #6c757d);
+}
+.workdir-btn-secondary:hover {
+    background-color: var(--secondary-button-hover-bg, #5c636a);
+}
+
+/* 模态框样式 */
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-content {
+    background-color: var(--panel-color);
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 80%;
+    max-width: 500px;
+    position: relative;
+    box-shadow: var(--shadow-main);
+}
+.modal-close-button {
+    color: var(--text-secondary);
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.modal-close-button:hover,
+.modal-close-button:focus {
+    color: var(--text-primary);
+    text-decoration: none;
+}
+.form-group {
+    margin-bottom: 15px;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group select,
+.form-group input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+    background-color: var(--input-bg, var(--bg-color));
+    color: var(--text-primary);
+}
+.form-actions {
+    text-align: right;
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* 新增项目选择模态框的样式 */
+#project-selection-modal .modal-content {
+    max-height: 80vh; /* 限制模态框最大高度 */
+    overflow-y: auto; /* 允许内容滚动 */
+}
+#project-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+.project-item-btn {
+    width: 100%;
+    padding: 10px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--panel-color);
+    color: var(--text-primary);
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+.project-item-btn:hover {
+    background-color: rgba(var(--rgb-panel-color), 0.5); /* 使用 panel-color 的半透明版本 */
+    border-color: var(--primary-color);
 }

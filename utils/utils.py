@@ -5,6 +5,11 @@ import hashlib # 用于MD5哈希计算
 from pathlib import Path # 用于路径操作
 from typing import Optional, Tuple # 用于类型提示
 import httpx # 导入 httpx
+from docx import Document
+from docx.oxml.text.paragraph import CT_P
+from docx.oxml.text.run import CT_R
+from docx.text.paragraph import Paragraph
+from docx.text.run import Run
 
 from loguru import logger # 从 loguru 导入 logger
 from config import settings # 导入配置 settings
@@ -103,3 +108,90 @@ def calculate_md5(file_path: Path) -> Optional[str]:
     except Exception as e: # 捕获其他潜在错误
         logger.error(f"计算文件 {file_path} MD5时发生未知错误: {e}")
         return None
+
+
+# def remove_whitespace_from_docx(path: str):
+#     '''
+#     去除docx中的空格
+#     '''
+#     doc = Document(path)
+#     for para in doc.paragraphs:
+#         for run in para.runs:
+#             run.text = run.text.replace('\u00A0', '')  # 非断行空格
+#             run.text = run.text.replace(' ', '')       # 普通空格
+#             run.text = run.text.replace('\t', '')      # 制表符
+#             run.text = run.text.replace('\n', '')      # 显式换行符
+
+#     doc.save(path)
+
+# def remove_empty_paragraphs_from_docx(path: str):
+#     doc = Document(path)
+
+#     # 新建文档
+#     new_doc = Document()
+
+#     for para in doc.paragraphs:
+#         if para.text.strip():  # 只复制非空段落
+#             new_para = new_doc.add_paragraph()
+#             for run in para.runs:
+#                 new_run = new_para.add_run(run.text)
+#                 # 保留基本格式
+#                 new_run.bold = run.bold
+#                 new_run.italic = run.italic
+#                 new_run.underline = run.underline
+#                 new_run.font.name = run.font.name
+
+#     new_doc.save(path)
+
+def remove_empty_paragraphs(doc_path):
+    """
+    从 .docx 文件中移除空段落和仅包含空白字符的段落。
+    此函数会同时处理文档正文和表格单元格中的段落。
+
+    :param doc_path: 原始 .docx 文件的路径。
+    :param new_doc_path: (可选) 清理后新文档的保存路径。
+                         如果为 None，则会自动生成一个新文件名，
+                         例如 "原文件名_cleaned.docx"。
+    """
+    
+    # 内部辅助函数，用于删除段落的 XML 元素
+    def _delete_paragraph(paragraph):
+        p = paragraph._element
+        p.getparent().remove(p)
+        # 将段落对象的内部引用设为 None，是一种好的编程习惯
+        paragraph._p = paragraph._element = None
+
+    # 检查文件是否存在
+    # if not os.path.exists(doc_path):
+    #     print(f"错误：文件 '{doc_path}' 不存在。")
+    #     return
+
+    # 如果未提供新路径，则自动生成一个
+    # if new_doc_path is None:
+    #     base, ext = os.path.splitext(doc_path)
+    #     new_doc_path = f"{base}_cleaned{ext}"
+
+    doc = Document(doc_path)
+
+    # --- 步骤 1: 识别所有待删除的段落 ---
+    # 创建一个列表来收集所有需要删除的段落对象
+    paragraphs_to_delete = []
+    
+    # 遍历正文段落
+    for paragraph in doc.paragraphs:
+        # 如果段落去除首尾空白后长度为0，则判定为空
+        if len(paragraph.text.strip()) == 0:
+            paragraphs_to_delete.append(paragraph)
+
+    # --- 步骤 2: 一次性删除所有已识别的段落 ---
+    # 在一个单独的循环中执行删除操作，避免在遍历时修改集合
+    for p in paragraphs_to_delete:
+        _delete_paragraph(p)
+
+    # --- 步骤 3: 保存清理后的文档 ---
+    try:
+        doc.save(doc_path)
+        # print(f"成功！已移除 {len(paragraphs_to_delete)} 个空段落。")
+        # print(f"清理后的文档已保存至：{new_doc_path}")
+    except Exception as e:
+        print(f"保存文件时出错：{e}")

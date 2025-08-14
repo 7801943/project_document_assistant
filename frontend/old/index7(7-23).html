@@ -1,0 +1,1010 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的工作台</title>
+
+    <script type="text/javascript" src="/static/base64.min.js" defer></script>
+    <!-- Added from botui.html -->
+    <script src="/static/marked.min.js"></script>
+    <script src="/static/upload/upload_form.js" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- jsTree theme -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/themes/default/style.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+
+    <div class="app-wrapper">
+        <header class="app-header">
+            <div class="title-container"> <!-- Title and status in a container -->
+                <div class="title"><span id="user-name">我</span>的工作台</div>
+                <span id="login-status-indicator"></span>
+            </div>
+            <div class="header-actions">
+                <button id="upload-spec-button" class="auth-button login" style="margin-right: 10px;" title="上传规程或项目文件">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cloud-arrow-up-fill" viewBox="0 0 16 16">
+                        <path d="M8 2a5.53 5.53 0 0 0-3.594 1.342c-.766.66-1.321 1.52-1.464 2.383C1.266 6.095 0 7.555 0 9.318 0 11.366 1.708 13 3.781 13h8.906C14.502 13 16 11.57 16 9.773c0-1.636-1.242-2.969-2.834-3.194C12.923 3.999 10.69 2 8 2m2.354 5.146a.5.5 0 0 1-.708.708L8.5 6.707V10.5a.5.5 0 0 1-1 0V6.707L6.354 7.854a.5.5 0 1 1-.708-.708l2-2a.5.5 0 0 1 .708 0z"/>
+                    </svg>
+                    <span style="margin-left: 8px;">上传规程或项目文件</span>
+                </button>
+                <button id="test-onlyoffice-button" class="auth-button login" style="background-color: #dc3545; margin-right: 10px;" title="测试OnlyOffice接口">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-bug-fill" viewBox="0 0 16 16">
+                        <path d="M4.978.855a.5.5 0 1 0-.956.29l.41 1.352A5 5 0 0 0 3 5h10a5 5 0 0 0-1.432-2.503l.41-1.352a.5.5 0 1 0-.956-.29l-.291.956A5 5 0 0 0 8 1a5 5 0 0 0-2.731.811z"/>
+                        <path d="M13 6v1H8.5v-.03a2 2 0 0 1 1.482-1.862l.434-.174A2 2 0 0 1 12.5 5.97V6zM7.5 7H3V6h1.522a2 2 0 0 1 1.897-1.443l.482-.193A2 2 0 0 1 8.5 5.97V6v1zM13 8v2H8.5v-2zm-5.5 0v2H3V8zm1.146 3.354a.5.5 0 0 0-.708.708l1.5 1.5a.5.5 0 0 0 .708 0l1.5-1.5a.5.5 0 0 0-.708-.708L8.5 12.293z"/>
+                    </svg>
+                    <span style="margin-left: 8px;">测试接口</span>
+                </button>
+                <button id="theme-toggle" class="theme-toggle-button" title="切换主题">
+                    <svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m-4.646.354a.5.5 0 0 1-.708 0l-1.414-1.414a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708m9.193 0a.5.5 0 0 1 0-.708l1.414-1.414a.5.5 0 0 1 .708.707l-1.414 1.414a.5.5 0 0 1-.708 0m-9.193-9.193a.5.5 0 0 1-.708-.707l1.414-1.414a.5.5 0 1 1 .707.707L3.354 5.354a.5.5 0 0 1 0-.708M13.646 5.354a.5.5 0 0 1 0 .707L12.232 7.5a.5.5 0 0 1-.707-.707L13.646 5.354a.5.5 0 0 1 .708 0M1.5 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1.5 8m13 0a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5"/></svg>
+                    <svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/></svg>
+                </button>
+                <a id="auth-button" href="/logout" class="auth-button logout"> <!-- Changed class and added id -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M10 12.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h8a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 1 0v-2A1.5 1.5 0 0 0 9.5 2h-8A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h8a1.5 1.5 0 0 0 1.5-1.5v-2a.5.5 0 0 0-1 0z"/><path fill-rule="evenodd" d="M15.854 8.354a.5.5 0 0 0 0-.708l-3-3a.5.5 0 0 0-.708.708L14.293 7.5H5.5a.5.5 0 0 0 0 1h8.793l-2.147 2.146a.5.5 0 0 0 .708.708z"/></svg>
+                    <span id="auth-button-text">登出</span> <!-- Added id -->
+                </a>
+            </div>
+        </header>
+        <main class="main-container">
+            <div class="left-panel">
+                <nav class="tab-navigation" id="tab-navigation-container">
+                    <button id="workdir-tab-button" class="tab-button" title="查看工作目录">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-folder" viewBox="0 0 16 16">
+                            <path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h3.982a2 2 0 0 1 1.992 2.181l-.637 7A2 2 0 0 1 13.174 14H2.826a2 2 0 0 1-1.991-1.819l-.637-7a1.99 1.99 0 0 1 .342-1.31zM2.19 4a1 1 0 0 0-.996.816l.637 7a1 1 0 0 0 .995.816h10.348a1 1 0 0 0 .995-.816l.637-7A1 1 0 0 0 13.81 4H2.19zm4.69-1.707A1 1 0 0 0 6.172 2H2.5a1 1 0 0 0-1 .981l.006.139C1.72 3.72 1.94 4 2.19 4h11.62c.25-1 .47.28.72.28.006.139l.006.139a1 1 0 0 0-1-.981H9.828a1 1 0 0 0-.707-.293z"/>
+                        </svg>
+                        <span>工作目录</span>
+                    </button>
+                    <div id="tab-container"></div>
+                </nav>
+                <div class="content-viewer" id="content-viewer">
+                    <div id="placeholder" class="placeholder" style="display: flex; width: 100%; height: 100%;"><span>请选择一个文件进行预览</span></div>
+                    <div id="workdir-viewer" style="display: none; height: 100%; padding: 10px; box-sizing: border-box;">
+                        <!-- The file tree will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            <div id="resizer" class="resizer-overlay">
+                <button id="collapse-left" class="panel-toggle floating-btn left-btn" title="隐藏左侧">〈</button>
+                <button id="collapse-right" class="panel-toggle floating-btn right-btn" title="隐藏右侧">〉</button>
+            </div>
+            <div class="right-panel">
+                <nav class="tab-navigation" id="right-tab-navigation-container">
+                    <button id="chat-tab-button" class="tab-button active" title="AI聊天">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-robot" viewBox="0 0 16 16">
+                            <path d="M6 12.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5M3 8.062C3 6.76 4.235 5.765 5.53 5.886a26.6 26.6 0 0 0 4.94 0C11.765 5.765 13 6.76 13 8.062v1.157a.93.93 0 0 1-.765.935c-.845.147-2.34.346-4.235.346s-3.39-.2-4.235-.346A.93.93 0 0 1 3 9.219z"/>
+                            <path d="M4.5 9a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 0-1h-6a.5.5 0 0 0-.5.5M12.292 3.412a.5.5 0 0 1 .208.666l-1.21 2.422a.5.5 0 0 1-.866-.434l1.21-2.422a.5.5 0 0 1 .658-.232m-8.584 0a.5.5 0 0 0 .208.666l1.21 2.422a.5.5 0 0 0 .866-.434l-1.21-2.422a.5.5 0 0 0-.658-.232"/>
+                            <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1M3 8a5 5 0 0 1 10 0v1.256A4.5 4.5 0 0 1 8 15a4.5 4.5 0 0 1-5-4.744z"/>
+                        </svg>
+                        <span>AI助手</span>
+                    </button>
+                    <button id="onlyoffice-tab-button" class="tab-button" title="在线编辑">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil-square" viewBox="0 0 16 16">
+                            <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.121l6.813-6.813z"/>
+                            <path fill-rule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+                        </svg>
+                        <span>在线编辑</span>
+                    </button>
+                </nav>
+                <div class="content-viewer" id="right-content-viewer">
+                    <div id="right-panel-container" style="display: block; width: 100%; height: 100%;">
+                        <!-- 聊天组件将动态加载于此 -->
+                    </div>
+                    <div id="onlyoffice-viewer" style="display: none; width: 100%; height: 100%;">
+                        <!-- OnlyOffice 编辑器将动态加载于此 -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Upload Spec Modal Container -->
+    <div id="upload-modal-container"></div>
+
+    <!-- jsTree libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js"></script>
+
+<script>
+    // --- Global State & DOM Refs from index4.html ---
+    const appState = {
+        openFiles: {},
+        activeFile: null,
+        sessionId: null,
+        isLoggedIn: false, // 新增登录状态
+        activeView: 'placeholder', // 新增：追踪当前视图 'placeholder', 'iframe', 'workdir'
+    };
+    // const chatbotIframe = document.getElementById('chatbot-iframe'); // Removed as iframe is replaced
+    const tabContainer = document.getElementById('tab-container');
+    const workdirTabButton = document.getElementById('workdir-tab-button');
+    const placeholder = document.getElementById('placeholder');
+    const contentViewer = document.getElementById('content-viewer'); // 新增：iframe 的容器
+    const workdirViewer = document.getElementById('workdir-viewer');
+    const loginStatusIndicator = document.getElementById('login-status-indicator');
+    const authButton = document.getElementById('auth-button');
+    const authButtonText = document.getElementById('auth-button-text');
+    const leftPanel = document.querySelector('.left-panel'); // 获取左侧面板
+    const rightPanel = document.querySelector('.right-panel'); // 获取右侧面板
+    const chatTabButton = document.getElementById('chat-tab-button'); // 获取聊天按钮
+    const onlyofficeTabButton = document.getElementById('onlyoffice-tab-button'); // 新增：获取在线编辑按钮
+    const chatContainer = document.getElementById('right-panel-container'); // 获取聊天容器
+    const onlyofficeViewer = document.getElementById('onlyoffice-viewer'); // 新增：获取在线编辑视图
+    const collapseLeftBtn = document.getElementById('collapse-left');
+    const collapseRightBtn = document.getElementById('collapse-right');
+    let chatSocket = null; // 聊天专用的 WebSocket
+    let current_conversation_id = null; // 用于跟踪当前多轮对话的ID
+    // Chat-related DOM elements will be initialized after the component is loaded
+    let botui_messageWindow, botui_chatForm, botui_chatInput, botui_sendButton, botui_stopAIButton, botui_newChatButton;
+    let isStreaming = false;
+    let currentBotMessageElement = null;
+    let current_task_id = null;
+    let panelState = 'default'; // 可以是 'default', 'left-collapsed', 'right-collapsed'
+    // 登录模态框相关元素（已移除）
+
+    // Upload Modal DOM elements are now self-contained in upload_form.html
+    // The trigger button is static
+    const uploadSpecButton = document.getElementById('upload-spec-button');
+    // The hide function needs to be global for the self-contained script to call it
+    window.hideUploadModal = hideUploadModal;
+
+
+    const MAX_WEBSOCKET_RETRIES = 5;
+    const WEBSOCKET_RETRY_INTERVAL = 5000;
+
+    let chatWebsocketRetryCount = 0; // 新增: 用于 chatSocket
+    let chatWebsocketRetryTimer = null; // 新增: 用于 chatSocket
+
+    // --- Theme Management from index4.html (controls everything) ---
+    const themeToggle = document.getElementById('theme-toggle'); // This is index4.html's main theme toggle
+    const getPreferredTheme = () => localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const setTheme = (theme) => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        // The chat component's theme should update automatically via CSS using html[data-theme='dark']
+    };
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    });
+
+    function updatePanelLayout() {
+        switch (panelState) {
+            case 'left-collapsed':
+                // 左侧收起 (0%)，右侧占满 (100%)
+                leftPanel.style.flex = '0 0 0%';
+                rightPanel.style.flex = '1 1 100%';
+                leftPanel.style.visibility = 'hidden';
+                rightPanel.style.visibility = 'visible';
+                collapseLeftBtn.innerText = '〈'; // 指向右，表示可展开
+                collapseRightBtn.innerText = '〉'; // 指向左，表示可恢复
+                break;
+            case 'right-collapsed':
+                // 右侧收起 (0%)，左侧占满 (100%)
+                leftPanel.style.flex = '1 1 100%';
+                rightPanel.style.flex = '0 0 0%';
+                leftPanel.style.visibility = 'visible';
+                rightPanel.style.visibility = 'hidden';
+                collapseLeftBtn.innerText = '〈'; // 指向右，表示可恢复
+                collapseRightBtn.innerText = '〉'; // 指向左，表示可展开
+                break;
+            default: // 'default' 状态, 50%/50%
+                leftPanel.style.flex = '1 1 50%';
+                rightPanel.style.flex = '1 1 50%';
+                leftPanel.style.visibility = 'visible';
+                rightPanel.style.visibility = 'visible';
+                collapseLeftBtn.innerText = '〈'; // 指向左，表示可收缩
+                collapseRightBtn.innerText = '〉'; // 指向右，表示可收缩
+                break;
+        }
+        // 触发 resize 事件，通知需要JS计算尺寸的组件（如编辑器、图表）更新其布局
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    collapseLeftBtn.addEventListener('click', () => {
+        // 如果当前是50/50，则收起左边
+        // 如果当前是任何一种收起状态，都恢复为50/50
+        panelState = (panelState === 'default') ? 'left-collapsed' : 'default';
+        updatePanelLayout();
+    });
+
+    collapseRightBtn.addEventListener('click', () => {
+        // 如果当前是50/50，则收起右边
+        // 如果当前是任何一种收起状态，都恢复为50/50
+        panelState = (panelState === 'default') ? 'right-collapsed' : 'default';
+        updatePanelLayout();
+    });
+    // --- Viewer Logic from index4.html ---
+    function showViewer(type, filename) {
+        appState.activeView = type;
+
+        // 隐藏所有主视图区域
+        placeholder.style.display = 'none';
+        workdirViewer.style.display = 'none';
+        contentViewer.querySelectorAll('iframe').forEach(frame => frame.style.display = 'none');
+
+        // 显示指定的视图
+        if (type === 'placeholder') {
+            placeholder.style.display = 'flex';
+            placeholder.querySelector('span').textContent = filename; // filename is now the message
+        } else if (type === 'workdir') {
+            workdirViewer.style.display = 'block';
+        } else if (type === 'iframe' && filename) { // Both markdown and others use iframe now
+            const frame = contentViewer.querySelector(`iframe[data-filename="${filename}"]`);
+            if (frame) {
+                frame.style.display = 'block';
+            } else {
+                placeholder.style.display = 'flex';
+                placeholder.querySelector('span').textContent = `正在加载 ${filename}...`;
+            }
+        }
+
+        // 更新工作目录按钮的激活状态
+        workdirTabButton.classList.toggle('active', type === 'workdir');
+
+        // 如果不是查看文件，则清除文件标签的激活状态
+        if (type !== 'iframe') {
+            if (appState.activeFile) {
+                appState.activeFile = null;
+                renderTabs();
+            }
+        }
+    }
+
+    function viewFile(filename) {
+        const file = appState.openFiles[filename];
+        if (!file) {
+            console.error(`Attempting to view a non-existent file: ${filename}`);
+            showViewer('placeholder', `无法找到文件 ${filename} 的数据。`);
+            return;
+        }
+
+        if (file.type === 'markdown') {
+            viewMarkdownFile(filename);
+        } else {
+            viewIframeFile(filename);
+        }
+    }
+
+    async function viewMarkdownFile(filename) {
+        const file = appState.openFiles[filename];
+        appState.activeFile = filename;
+        renderTabs();
+
+        showViewer('iframe', filename); // Markdown也使用iframe
+
+        let frame = contentViewer.querySelector(`iframe[data-filename="${filename}"]`);
+        if (!frame) {
+            console.log(`Creating new iframe for Markdown: ${filename}`);
+            try {
+                const justTheFilename = filename.substring(filename.lastIndexOf('/') + 1);
+                const fileDownloadUrl = `/download/${file.token}/${encodeURIComponent(justTheFilename)}`;
+
+                // 将下载链接作为参数传递给 markdown.html
+                const previewUrl = `/static/markdown.html?fileUrl=${encodeURIComponent(fileDownloadUrl)}`;
+
+                const newFrame = document.createElement('iframe');
+                newFrame.dataset.filename = filename;
+                newFrame.style.cssText = 'width: 100%; height: 100%; border: none; display: none;';
+                newFrame.src = previewUrl;
+                contentViewer.appendChild(newFrame);
+
+            } catch (error) {
+                console.error(`Error preparing markdown preview for "${filename}":`, error);
+                showViewer('placeholder', `准备Markdown预览 "${filename}" 出错: ${error.message}`);
+                return;
+            }
+        }
+        showViewer('iframe', filename);
+        console.log(`Displaying iframe for markdown: ${filename}`);
+    }
+
+    function viewIframeFile(filename) {
+        const file = appState.openFiles[filename];
+        appState.activeFile = filename;
+        renderTabs();
+
+        showViewer('iframe', filename);
+
+        let frame = contentViewer.querySelector(`iframe[data-filename="${filename}"]`);
+        if (!frame) {
+            console.log(`Creating new iframe for: ${filename}`);
+            try {
+                const fastapiBaseUrl = window.location.origin;
+                //const justTheFilename = filename.substring(filename.lastIndexOf('/') + 1);
+                // 注意：这里的下载URL是给kkfileview代理的，它需要一个完整的URL
+                const justTheFilename = filename.substring(filename.lastIndexOf('/') + 1);
+                const fileDownloadUrl = `http://host.docker.internal:8888/download/${file.token}/${encodeURIComponent(justTheFilename)}`;
+
+                // 3. 构造指向后端 kkFileView 代理的 URL
+                //    后端代理是 /api/v1/kkfileview/onlinePreview
+                //    它期望一个 file_url 参数，其值是上面构造的 fileDownloadUrl
+                //    根据您的反馈和 forward_test.html 的注释，fileDownloadUrl 在这里不应再次被 encodeURIComponent
+                const previewProxyUrl = `${fastapiBaseUrl}/kkfileview/onlinePreview?file_url=${fileDownloadUrl}`;
+                console.log(`[KKFileView] 请求预览代理 (iframe.src): ${previewProxyUrl} ,传递给代理的 file_url 参数值: ${fileDownloadUrl}`);
+
+                const newFrame = document.createElement('iframe');
+                newFrame.dataset.filename = filename;
+                newFrame.style.cssText = 'width: 100%; height: 100%; border: none; display: none;';
+                newFrame.src = previewProxyUrl;
+                contentViewer.appendChild(newFrame);
+            } catch (error) {
+                console.error(`Error preparing file preview for "${filename}":`, error);
+                showViewer('placeholder', `准备文件预览 "${filename}" 出错: ${error.message}`);
+                return;
+            }
+        }
+        showViewer('iframe', filename);
+        console.log(`Displaying iframe for: ${filename}`);
+    }
+
+    // --- OnlyOffice 编辑器逻辑 (生产版本) ---
+    function openFileInOnlyOffice(filePath, fileToken) {
+        try {
+            // 1. 切换到在线编辑视图
+            showRightPanelView('onlyoffice');
+
+            // 2. 准备并加载 iframe，将文件路径和token作为参数传递
+            const editorUrl = `/onlyoffice/editor?filepath=${encodeURIComponent(filePath)}&token=${encodeURIComponent(fileToken)}`;
+
+            // 移除旧的编辑器 iframe (如果有)
+            const existingFrame = onlyofficeViewer.querySelector('iframe');
+            if (existingFrame) {
+                existingFrame.remove();
+            }
+
+            // 创建新的 iframe
+            const iframe = document.createElement('iframe');
+            iframe.src = editorUrl;
+            iframe.style.cssText = 'width: 100%; height: 100%; border: none;';
+            iframe.title = `在线编辑 - ${filePath}`;
+
+            onlyofficeViewer.appendChild(iframe);
+            console.log(`Loading OnlyOffice editor for ${filePath} via URL: ${editorUrl}`);
+
+        } catch (error) {
+            console.error(`打开 OnlyOffice 编辑器失败 for ${filePath}:`, error);
+            alert(`无法打开在线编辑器: ${error.message}`);
+            showRightPanelView('chat');
+        }
+    }
+
+    // --- 新增：直接测试后端 /test_button_clicked 接口的函数 ---
+    async function testOnlyOfficeEditor() { // 修改为 async 函数
+        console.log("正在调用后端 /test_button_clicked 端点...");
+        try {
+            const response = await fetch('/test_button_clicked'); // 发送 GET 请求
+            if (response.ok) {
+                const text = await response.text(); // 获取响应文本
+                console.log("后端 /test_button_clicked 端点返回成功:");
+                console.log(text); // 打印到控制台
+            } else {
+                const errorText = await response.text();
+                console.error("后端 /test_button_clicked 端点返回错误:", response.status, errorText);
+                alert(`测试按钮点击失败: ${response.status} - ${errorText}`);
+            }
+        } catch (error) {
+            console.error("调用后端 /test_button_clicked 端点时发生网络错误:", error);
+            alert(`测试按钮点击失败: 网络错误 - ${error.message}`);
+        }
+        // 移除与 OnlyOffice 相关的视图切换和 iframe 逻辑，因为只是测试接口
+        // showRightPanelView('chat'); // 保持在聊天视图或不切换视图
+    }
+
+    // --- Tab Management Logic from index4.html ---
+    function renderTabs() {
+        tabContainer.innerHTML = '';
+        const openFilenames = Object.keys(appState.openFiles);
+        openFilenames.forEach(filename => {
+            const file = appState.openFiles[filename];
+            const button = document.createElement('button');
+            button.className = 'tab-button';
+            button.dataset.filename = filename;
+            // 新增：将完整路径作为 tooltip
+            button.title = filename;
+            if (filename === appState.activeFile) button.classList.add('active');
+            const icon = window.ICONS[file.format] || window.ICONS.default;
+            // 新增：从完整路径中提取文件名
+            const shortFilename = filename.substring(filename.lastIndexOf('/') + 1);
+            button.innerHTML = `${icon}<span>${shortFilename}</span><span class="close-tab" title="关闭标签页">&times;</span>`;
+            button.addEventListener('click', (e) => {
+                if (e.target.classList.contains('close-tab')) return;
+                viewFile(filename);
+            });
+            button.querySelector('.close-tab').addEventListener('click', (e) => {
+                e.stopPropagation();
+                closeTab(filename);
+            });
+            tabContainer.appendChild(button);
+        });
+        const activeTab = tabContainer.querySelector('.active');
+        if (activeTab) {
+            activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+    }
+
+    function closeTab(filename) {
+        const file = appState.openFiles[filename];
+        if (file) {
+            // 所有文件类型都使用iframe
+            const frame = contentViewer.querySelector(`iframe[data-filename="${filename}"]`);
+            if (frame) {
+                frame.remove();
+                console.log(`Removed iframe for: ${filename}`);
+            }
+
+            delete appState.openFiles[filename];
+
+            if (appState.activeFile === filename) {
+                const remainingFiles = Object.keys(appState.openFiles);
+                if (remainingFiles.length > 0) {
+                    const newActiveFile = remainingFiles[remainingFiles.length - 1];
+                    viewFile(newActiveFile);
+                } else {
+                    appState.activeFile = null;
+                    showViewer('placeholder', '所有文件都已关闭。');
+                }
+            }
+            renderTabs();
+            updateWorkdirButtonStates();
+        }
+    }
+
+    // --- WebSocket Logic for Chat ---
+    function connectChatWebSocket() {
+        if (!appState.sessionId) {
+            console.error("无法连接聊天WebSocket：缺少session_id。");
+            return;
+        }
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        // 新的聊天WebSocket端点
+        //
+        const chatWsUrl = `${protocol}//${window.location.host}/ws/v2/chat?session_id=${appState.sessionId}`;
+        //const chatWsUrl = `${protocol}//${window.location.host}/ws_chat_stream?session_id=${appState.sessionId}`;
+        console.log(`正在连接到聊天 WebSocket: ${chatWsUrl}`);
+        chatSocket = new WebSocket(chatWsUrl);
+
+        chatSocket.onopen = () => {
+            console.log("聊天WebSocket 连接已建立。");
+            chatWebsocketRetryCount = 0;
+            clearTimeout(chatWebsocketRetryTimer);
+        };
+
+        chatSocket.onmessage = (event) => {
+            // console.debug("收到聊天WebSocket消息:", event.data);
+            try {
+                const message = JSON.parse(event.data);
+                if (message.type === 'chat_event_batch' && message.payload && Array.isArray(message.payload)) {
+                    if (!isStreaming) return; // 立即停止处理消息
+                    message.payload.forEach(eventData => {
+                        // console.debug("处理聊天事件:", eventData);
+
+                        // Bug 2 修复：更早地捕获 task_id 并启用停止按钮
+                        // 无论事件类型如何，只要 task_id 出现并且我们还没有它，就捕获它
+                        if (eventData.task_id && !current_task_id) {
+                            current_task_id = eventData.task_id;
+                            console.log("Captured task_id:", current_task_id);
+                            botui_stopAIButton.disabled = false; // 立即启用按钮
+                        }
+
+                        if (eventData.answer) {
+                            botui_appendToCurrentBotMessage(eventData.answer);
+                            // 此处的重复启用逻辑已移至上面，确保只执行一次
+                        } else if (eventData.event === 'agent_thought') {
+                            // task_id 的捕获逻辑已移至上方，此处保留其他逻辑
+                            const summaryParts = [];
+                            let contentText = "";
+                            if (eventData.thought) {
+                                summaryParts.push('思考内容');
+                                contentText += `思考内容: ${eventData.thought}\n`;
+                            }
+                            if (eventData.tool) {
+                                summaryParts.push('调用工具');
+                                contentText += `调用工具: ${eventData.tool}\n`;
+                                if(eventData.tool_input) contentText += `工具输入: ${eventData.tool_input}\n`;
+                            }
+                            if (eventData.observation) {
+                                if (!eventData.tool) summaryParts.push('工具结果');
+                                contentText += `工具结果: ${eventData.observation}\n`;
+                            }
+                            if (summaryParts.length > 0 || contentText.trim()) {
+                                const summaryText = summaryParts.length > 0 ? summaryParts.join('、') : 'Agent 思考步骤';
+                                // 先结束当前的气泡
+                                botui_finalizeCurrentBotMessage();
+                                // 再添加工具信息
+                                // 把工具调用，工具结果，全部放到一个折叠框里
+                                if(eventData.observation){
+                                botui_addCollapsibleMessage(`${summaryText} (点击展开)`, contentText.trim());
+                                }
+                            }
+                        } else if (eventData.event === 'message_end') {
+                            if (eventData.conversation_id) botui_conversation_id = eventData.conversation_id;
+                            botui_finalizeCurrentBotMessage();
+                            current_task_id = null; // Clear task_id as stream ended
+                            botui_stopAIButton.disabled = true; // Disable button
+                            botui_sendButton.disabled = false; // 重新启用发送按钮
+                        } else if (eventData.conversation_id) {
+                            botui_conversation_id = eventData.conversation_id;
+                        }
+                    });
+                } else if (message.type === 'stop_request_processed') {
+                    console.log("Stop request processed by server:", message);
+                    botui_addMessage(`<i>已发送停止指令 (任务: ${message.task_id}, 状态: ${message.status})</i>`, 'bot');
+                    if (message.status === 'success') {
+                        // Stream should stop via Dify, message_end will handle UI cleanup
+                        // botui_stopAIButton.style.display = 'none'; // Handled by message_end
+                        // current_task_id = null; // Handled by message_end
+                    }
+                    botui_stopAIButton.disabled = true; // 停止按钮应被禁用，直到下一次流开始
+                    botui_sendButton.disabled = false; // 重新启用发送按钮
+                } else if (message.type === 'error') {
+                    console.error("聊天WebSocket收到错误消息:", message.content, message.details || '');
+                    botui_addMessage(`😥 **聊天服务器错误**: ${message.content}${message.details ? ` (${message.details})` : ''}`, 'bot');
+                    botui_finalizeCurrentBotMessage();
+                    current_task_id = null;
+                    botui_stopAIButton.disabled = true; // Disable button
+                    botui_sendButton.disabled = false; // 重新启用发送按钮
+                } else if (message.type === 'file_open_request' && message.payload) { // 新增对 file_open_request 的处理
+                    console.log("聊天WebSocket收到 file_open_request:", message.payload);
+                    handleFileOpenRequest(message.payload); // 复用现有的处理函数
+                } else if (message.type === 'directory_update' && message.payload) {
+                    console.log("聊天WebSocket收到 directory_update:", message.payload);
+                    handleDirectoryUpdate(message.payload);
+                } else {
+                    console.warn("收到未知的聊天WebSocket消息类型:", message);
+                }
+            } catch (e) {
+                console.error("处理聊天WebSocket消息时出错:", e, "原始数据:", event.data);
+            }
+        };
+
+        chatSocket.onclose = (event) => {
+            console.warn(`聊天WebSocket 连接已关闭。代码: ${event.code}, 原因: '${event.reason}'`);
+            clearTimeout(chatWebsocketRetryTimer);
+
+            // Bug 3: 如果是服务器因为 session_id 无效而主动关闭，则不重连
+            if (event.code === 1008 || event.code === 1011) {
+                console.error(`服务器关闭连接 (代码: ${event.code})，原因: "${event.reason}"。停止重连。`);
+                botui_addMessage(`与服务器的连接已断开: ${event.reason} 请尝试重新登录。`, 'bot');
+                updateLoginStatusUI(false); // 更新UI到未登录状态，以提示用户重新登录
+                return; // 明确阻止后续的重连逻辑
+            }
+
+            if (event.code === 1000 || event.code === 1001 || event.code === 1005) {
+                console.log(`聊天WebSocket normally closed. Code: ${event.code}, Reason: '${event.reason}'`);
+                if (appState.isLoggedIn) {
+                    console.warn("聊天WebSocket closed normally but unexpectedly while logged in.");
+                    handleChatWebSocketDisconnect(); // 调用新的处理函数
+                }
+                return;
+            }
+            console.warn(`聊天WebSocket abnormally closed. Code: ${event.code}, Reason: '${event.reason}'`);
+            handleChatWebSocketDisconnect(); // 调用新的处理函数
+        };
+
+        chatSocket.onerror = (error) => {
+            console.error("聊天WebSocket 发生错误:", error);
+            if (chatSocket) chatSocket.close();
+        };
+    }
+
+
+    function handleFileOpenRequest(fileInfo) {
+        const { filename, download_token, format } = fileInfo;
+        const isMarkdown = filename.toLowerCase().endsWith('.md') || filename.toLowerCase().endsWith('.markdown');
+        // 注意：这里的逻辑不再需要，因为“打开”按钮现在用于预览，“编辑”按钮用于编辑
+        // const isOfficeDoc = ['docx', 'xlsx', 'pptx', 'doc', 'xls', 'ppt'].includes(format);
+
+        // if (isOfficeDoc) {
+        //     openFileInOnlyOffice(filename, download_token);
+        //     return;
+        // }
+
+        // 检查文件是否已在打开的标签页中
+        if (appState.openFiles[filename]) {
+            console.log(`File ${filename} is already open. Switching to its tab.`);
+            viewFile(filename); // 切换到已有的标签页
+        } else {
+            // 如果文件未打开，则添加到状态并查看
+            console.log(`Opening new file: ${filename}`);
+            appState.openFiles[filename] = {
+                format: format,
+                token: download_token,
+                type: isMarkdown ? 'markdown' : 'iframe' // 增加类型区分
+            };
+            viewFile(filename);
+        }
+        // 无论文件是新打开还是已打开，都更新按钮状态
+        updateWorkdirButtonStates();
+    }
+
+    function updateWorkdirButtonStates() {
+        if (window.WorkdirManager) {
+            window.WorkdirManager.updateNodeStates(appState.openFiles);
+        }
+    }
+
+    function handleDirectoryUpdate(payload) {
+        if (window.WorkdirManager) {
+            window.WorkdirManager.updateData(payload.files);
+        }
+        showViewer('workdir');
+    }
+
+    // --- Upload Modal Logic (Simplified for Self-Contained Component) ---
+    async function showUploadModal() {
+        if (!appState.isLoggedIn) {
+            alert("请先登录再上传文件。");
+            window.location.href = '/static/login.html';
+            return;
+        }
+
+        const modalContainer = document.getElementById('upload-modal-container');
+        if (modalContainer.innerHTML.trim() !== '') {
+            const modal = modalContainer.querySelector('#upload-spec-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+            }
+            return;
+        }
+
+        try {
+            const infoResponse = await fetch('/api/upload-info');
+            if (!infoResponse.ok) {
+                const errorData = await infoResponse.json();
+                throw new Error(errorData.detail || `无法加载上传信息: ${infoResponse.statusText}`);
+            }
+            const infoData = await infoResponse.json();
+
+            const templateResponse = await fetch('/static/upload/upload_form.html');
+            if (!templateResponse.ok) {
+                throw new Error(`无法加载上传表单模板: ${templateResponse.statusText}`);
+            }
+            const formHtml = await templateResponse.text();
+
+            modalContainer.innerHTML = formHtml;
+
+            const modal = document.getElementById('upload-spec-modal');
+            if (modal) {
+                const closeButton = modal.querySelector('.modal-close-button');
+                const modalContent = modal.querySelector('.modal-content');
+
+                modal.addEventListener('click', (event) => {
+                    if (event.target === modal) { // Only close if clicking on the overlay itself
+                        hideUploadModal();
+                    }
+                });
+                if(closeButton) {
+                    closeButton.addEventListener('click', hideUploadModal);
+                }
+
+                initializeUploadForm(infoData.categories);
+                modal.style.display = 'flex';
+            } else {
+                throw new Error("无法在加载的HTML中找到 #upload-spec-modal 元素。");
+            }
+
+        } catch (error) {
+            console.error('显示上传模块失败:', error);
+            alert(`错误: ${error.message}`);
+            modalContainer.innerHTML = '';
+        }
+    }
+
+    function hideUploadModal() {
+        const modalContainer = document.getElementById('upload-modal-container');
+        const modal = modalContainer.querySelector('#upload-spec-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    function hideLoginModal() {
+        // 为兼容性保留，但现在不做任何事
+    }
+
+    // --- UI Update for Login Status ---
+    function updateLoginStatusUI(isLoggedIn) {
+        appState.isLoggedIn = isLoggedIn;
+        if (isLoggedIn) {
+            loginStatusIndicator.textContent = '（已登录）';
+            authButtonText.textContent = '登出';
+            authButton.href = '/logout'; // Standard logout link
+            authButton.classList.remove('login');
+            authButton.classList.add('logout');
+            authButton.onclick = async (e) => { // Handle logout click
+                e.preventDefault();
+                    const currentSessionId = appState.sessionId; // Store before clearing
+                    try {
+                        // 后端 /logout 是 GET 请求
+                        await fetch('/logout', { method: 'GET' });
+                    } catch (error) {
+                        console.error("Logout request failed:", error);
+                    } finally {
+                        appState.sessionId = null; // Clear session ID
+                        sessionStorage.removeItem('session_id');
+                        if (chatSocket && chatSocket.readyState === WebSocket.OPEN) {
+                            chatSocket.close(1000, "User logged out");
+                        }
+                        chatSocket = null;
+                        updateLoginStatusUI(false); // Update UI to logged out state
+                        // showViewer('placeholder', '您已登出。请重新登录以继续。');
+                    // botui_messageWindow.innerHTML = ''; // Do not clear chat messages
+                    // botui_conversation_id = null; // Do not reset conversation
+                }
+            };
+        } else {
+            loginStatusIndicator.textContent = '（未登录）';
+            authButtonText.textContent = '登录';
+            authButton.href = '/static/login.html'; // 直接跳转到登录页面
+            authButton.classList.remove('logout');
+            authButton.classList.add('login');
+            authButton.onclick = null; // 移除旧的 onclick 事件处理器
+            // 内容（标签页、iframe、聊天）在登出或断开连接时不会立即清除。
+            // 它们将在新的成功登录后或通过其他操作明确清除时进行处理。
+            showViewer('placeholder', '请登录以使用我的工作台。'); // 占位符仍然可以更新
+        }
+    }
+
+    // --- WebSocket Disconnect Handling for Chat Socket ---
+    function handleChatWebSocketDisconnect() {
+        console.warn("聊天WebSocket disconnected or failed to connect.");
+        if (chatSocket && (chatSocket.readyState === WebSocket.OPEN || chatSocket.readyState === WebSocket.CONNECTING)) {
+            try { chatSocket.close(); } catch(e) { console.warn("Error closing chatSocket:", e); }
+        }
+        chatSocket = null;
+
+        if (appState.isLoggedIn) {
+            if (chatWebsocketRetryCount < MAX_WEBSOCKET_RETRIES) {
+                chatWebsocketRetryCount++;
+                console.log(`Attempting to reconnect 聊天WebSocket (attempt ${chatWebsocketRetryCount}/${MAX_WEBSOCKET_RETRIES}) in ${WEBSOCKET_RETRY_INTERVAL / 1000} seconds...`);
+                clearTimeout(chatWebsocketRetryTimer);
+                chatWebsocketRetryTimer = setTimeout(connectChatWebSocket, WEBSOCKET_RETRY_INTERVAL);
+            } else {
+                console.error(`聊天WebSocket reconnection failed after ${MAX_WEBSOCKET_RETRIES} attempts.`);
+                botui_addMessage("与聊天服务器的连接已断开，聊天功能可能无法使用。您可以尝试刷新页面或稍后重试。", "bot");
+            }
+        } else {
+            console.log("聊天WebSocket not attempting reconnection as user is not logged in.");
+        }
+    }
+
+    // --- App Initialization (Revised) ---
+    async function checkLoginStatusAndInitialize(isAfterLoginAttempt = false) {
+        try {
+            const response = await fetch('/api/user/status');
+            if (response.ok) {
+                const userData = await response.json();
+                const previousSessionId = appState.sessionId;
+                sessionStorage.setItem('session_id', userData.session_id);
+                appState.sessionId = userData.session_id;
+
+                // ✅ 设置用户名到标题中
+                const userNameSpan = document.getElementById("user-name");
+                if (userNameSpan && userData.username) {
+                    userNameSpan.textContent = userData.username;
+                }
+
+                updateLoginStatusUI(true); // 设置为已登录状态
+
+                if (isAfterLoginAttempt && previousSessionId && previousSessionId !== appState.sessionId) {
+                    // If logged in as a new/different user, clear old state
+                    console.log("New user session detected after login. Clearing previous state.");
+                    appState.openFiles = {};
+                    appState.activeFile = null;
+                    renderTabs();
+                    if (!fileViewerIframe.src.includes('about:blank')) fileViewerIframe.src = 'about:blank';
+                    botui_messageWindow.innerHTML = '';
+                    botui_conversation_id = null;
+                }
+
+                connectChatWebSocket();    // 连接聊天专用 WebSocket
+
+                if (isAfterLoginAttempt) { // If this was after a successful login
+                     showViewer('placeholder', '登录成功！我的工作台已就绪。');
+                }
+            } else if (response.status === 401) {
+                // 用户未登录或会话无效，恢复为UI更新和模态框逻辑
+                updateLoginStatusUI(false);
+                // 不再重定向，而是依赖UI提示用户登录
+            } else {
+                throw new Error(`获取用户状态失败: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('检查登录状态或初始化应用时出错:', error);
+            // 发生错误时，同样更新UI，而不是重定向
+            updateLoginStatusUI(false);
+            botui_addMessage(`无法连接到服务器进行状态检查: ${error.message}`, 'bot');
+        }
+
+        // Common initialization steps regardless of login status (e.g., loading non-user-specific resources)
+        // Get chatbot API config is now handled within the chat component if needed, or can be passed.
+        // For now, we assume the global `dynamic_bot_api_url` and `dynamic_bot_api_key` are sufficient.
+        // If these need to be fetched, it should be done before or during chat component initialization.
+
+        if (!isAfterLoginAttempt && !appState.isLoggedIn) {
+             showViewer('placeholder', '请登录以使用我的工作台。');
+        } else if (!isAfterLoginAttempt && appState.isLoggedIn) {
+             showViewer('placeholder', '我的工作台已就绪。');
+        }
+        // renderTabs(); // Already called in init
+    }
+
+    // --- 面板切换逻辑 ---
+    function toggleRightPanelVisibility() {
+        // 如果左侧面板当前是隐藏的，我们必须先显示它
+        if (leftPanel.classList.contains('hidden')) {
+            leftPanel.classList.remove('hidden');
+            rightPanel.classList.remove('expanded'); // 确保右侧恢复正常大小
+        }
+        // 现在，切换右侧面板的可见性
+        const isRightHidden = rightPanel.classList.toggle('hidden');
+        // 根据右侧面板是否隐藏，来决定是否展开左侧面板
+        leftPanel.classList.toggle('expanded', isRightHidden);
+    }
+
+    function toggleLeftPanelVisibility() {
+        // 如果右侧面板当前是隐藏的，我们必须先显示它
+        if (rightPanel.classList.contains('hidden')) {
+            rightPanel.classList.remove('hidden');
+            leftPanel.classList.remove('expanded'); // 确保左侧恢复正常大小
+        }
+        // 现在，切换左侧面板的可见性
+        const isLeftHidden = leftPanel.classList.toggle('hidden');
+        // 根据左侧面板是否隐藏，来决定是否展开右侧面板
+        rightPanel.classList.toggle('expanded', isLeftHidden);
+    }
+
+    // --- 右侧面板标签页逻辑 (全局作用域) ---
+    function showRightPanelView(viewName) {
+        // 隐藏所有视图
+        chatContainer.style.display = 'none';
+        onlyofficeViewer.style.display = 'none';
+
+        // 激活对应的按钮
+        chatTabButton.classList.remove('active');
+        onlyofficeTabButton.classList.remove('active');
+
+        // 显示目标视图和激活按钮
+        if (viewName === 'chat') {
+            chatContainer.style.display = 'block';
+            chatTabButton.classList.add('active');
+        } else if (viewName === 'onlyoffice') {
+            onlyofficeViewer.style.display = 'block';
+            onlyofficeTabButton.classList.add('active');
+        }
+
+        // 如果右侧面板是隐藏的，则显示它
+        if (rightPanel.classList.contains('hidden')) {
+            toggleRightPanelVisibility();
+        }
+    }
+
+    async function loadWorkdirViewer() {
+        try {
+            const response = await fetch('/static/workdir/workdir_viewer.html');
+            if (!response.ok) throw new Error('Failed to load workdir viewer HTML');
+            const html = await response.text();
+            workdirViewer.innerHTML = html;
+
+            const script = document.createElement('script');
+            script.src = '/static/workdir/workdir_viewer.js';
+            script.onload = () => {
+                console.log("WorkdirManager script loaded.");
+                if (window.WorkdirManager) {
+                    window.WorkdirManager.initialize('#file-tree-container', {
+                        open: handleFileOpenRequest,
+                        edit: openFileInOnlyOffice,
+                        llmRead: (filePath) => {
+                            const query = `请读取文件，路径是 ${filePath}`;
+                            botui_addMessage(query, 'user');
+                            botui_streamMessageViaWebSocket(query);
+                        }
+                    });
+                }
+            };
+            document.body.appendChild(script);
+        } catch (error) {
+            console.error('Error loading workdir viewer:', error);
+            workdirViewer.innerHTML = '<p>Error loading file tree.</p>';
+        }
+    }
+
+    async function init() {
+        setTheme(getPreferredTheme());
+        await Promise.all([
+            loadChatComponent(),
+            loadWorkdirViewer()
+        ]);
+
+        // 新增：为红色区域中的新切换按钮添加事件监听
+
+
+        // 测试按钮的事件监听
+        const testOnlyOfficeButton = document.getElementById('test-onlyoffice-button');
+        if (testOnlyOfficeButton) {
+            testOnlyOfficeButton.addEventListener('click', testOnlyOfficeEditor);
+        }
+
+        chatTabButton.addEventListener('click', () => showRightPanelView('chat'));
+        onlyofficeTabButton.addEventListener('click', () => showRightPanelView('onlyoffice'));
+
+        // 默认显示聊天视图
+        showRightPanelView('chat');
+
+        // 初始化时生成或加载 conversation_id
+        // 如果 sessionStorage 中有，则加载；否则生成新的
+        current_conversation_id = sessionStorage.getItem('current_conversation_id') || generateUUID();
+        sessionStorage.setItem('current_conversation_id', current_conversation_id);
+        console.log("Initial Conversation ID:", current_conversation_id);
+
+        // 为工作目录标签页按钮添加事件监听器
+        workdirTabButton.addEventListener('click', () => {
+            if (appState.activeView !== 'workdir') {
+                showViewer('workdir');
+            } else {
+                // 如果当前已是工作目录视图，则切换回默认占位符
+                showViewer('placeholder', '我的工作台已就绪。');
+            }
+        });
+
+
+        uploadSpecButton.onclick = showUploadModal; // 为静态上传按钮附加监听器
+        await checkLoginStatusAndInitialize();
+        renderTabs(); // 初始标签页渲染
+        updatePanelLayout(); // 初始化面板布局
+    }
+
+    // --- ICONS from index4.html ---
+    window.ICONS = {
+        pdf: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/><path d="M4.603 14.087a.8.8 0 0 1-1.214-.886l.66-1.98a.52.52 0 0 1 .184-.282l.062-.052.062-.052a.5.5 0 0 1 .736.646l-.119.119a.11.11 0 0 0-.03.076l-.23.69zM5.53 12.042a.51.51 0 0 1 .707.707l-1.464 1.464a.51.51 0 0 1-.707-.707z"/></svg>`,
+        docx: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8.88 15.84c-.45.08-.91.16-1.38.16H2.5A1.5 1.5 0 0 1 1 14.5V3.5A1.5 1.5 0 0 1 2.5 2H10v2h2v1.5a.5.5 0 0 0 1 0V4h.5a.5.5 0 0 0 .29-.91L11.15.29a.5.5 0 0 0-.85.35V2.5A1.5 1.5 0 0 1 9 1H2.5A2.5 2.5 0 0 0 0 3.5v11A2.5 2.5 0 0 0 2.5 17h6.08c.55 0 1.07-.1 1.55-.27l.5-.27c.45-.25.85-.58 1.17-1a.5.5 0 0 0-.85-.52c-.25.3-.57.54-.9.74l-.5.27Z"/><path d="M16 12h-3a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1m-3-2h3v1h-3z"/></svg>`,
+        xlsx: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.18 4.603L1.18 8.603h2.825L8 4.306zm3.593 0L5.18 10.297h2.825L12 5.006zM13.18 4.603L9.18 8.603h2.825L16 4.306zM13.18 10.297L9.18 14.297h2.825L16 9.006z"/><path d="M1.18 8.603a.5.5 0 0 0 .306.491l6.98 3.293a.5.5 0 0 0 .468 0l6.98-3.293a.5.5 0 0 0 .306-.491L9.18 1.497a.5.5 0 0 0-.468 0zM8.944 1.151l6.98 3.293L8.944 7.739 1.964 4.444zM1.964 9.098l6.98 3.293 6.98-3.293-6.98-3.294z"/></svg>`,
+        default: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5zM4 1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1z"/></svg>`
+    };
+
+    // --- Chat Component Loader ---
+    async function loadChatComponent() {
+        try {
+            const response = await fetch('/static/agent-chat/ai_chat_component.html');
+            if (!response.ok) throw new Error('Failed to load chat HTML');
+            const html = await response.text();
+            const chatWrapper = document.getElementById('right-panel-container');
+            chatWrapper.innerHTML = html;
+
+            // Now that the HTML is loaded, we can initialize the chat script
+            const script = document.createElement('script');
+            script.src = '/static/agent-chat/ai_chat.js';
+            script.defer = true;
+            script.onload = () => {
+                console.log("ai_chat.js loaded, initializing DOM elements.");
+                if (typeof initializeChatDOMElements === 'function') {
+                    initializeChatDOMElements();
+                } else {
+                    console.error("initializeChatDOMElements function not found after loading script.");
+                }
+            };
+            document.body.appendChild(script);
+        } catch (error) {
+            console.error('Error loading chat component:', error);
+            document.getElementById('right-panel-container').innerHTML = '<p>Error loading chat component.</p>';
+        }
+    }
+
+
+    window.addEventListener('load', init);
+
+    // UUID 生成函数，用于兼容不支持 crypto.randomUUID 的环境
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+</script>
+</body>
+</html>

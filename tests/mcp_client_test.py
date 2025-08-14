@@ -24,7 +24,7 @@ def display_tool_result(call_result: CallToolResult):
 
         # 优先尝试从 content_item 中提取 text 属性
         if hasattr(content_item, 'text'):
-            server_response_text = content_item.text
+            server_response_text = getattr(content_item, 'text', '')
         elif isinstance(content_item, str):
             # 尝试解析为JSON，以处理 open_specification_files 等工具的结构化返回
             try:
@@ -79,40 +79,21 @@ def display_tool_result(call_result: CallToolResult):
         if isinstance(call_result.content, list) and len(call_result.content) > 0:
             first_content_item = call_result.content[0]
             if hasattr(first_content_item, 'text'):
-                error_content_str = first_content_item.text
+                error_content_str = getattr(first_content_item, 'text', '')
             elif isinstance(first_content_item, dict) and "detail" in first_content_item:
-                error_content_str = first_content_item["detail"]
+                error_content_str = first_content_item.get("detail", "")
             elif isinstance(first_content_item, str):
                 error_content_str = first_content_item
         elif hasattr(call_result.content, 'text'):
-            error_content_str = call_result.content.text
+            error_content_str = getattr(call_result.content, 'text', '')
         elif isinstance(call_result.content, dict) and "detail" in call_result.content:
-            error_content_str = call_result.content["detail"]
+            error_content_str = call_result.content.get("detail", "")
         elif isinstance(call_result.content, str):
             error_content_str = call_result.content
 
         print(f"错误: 服务器工具调用返回错误: {error_content_str}")
     else:
         print("信息: 服务器未返回有效内容，或者响应为空。")
-
-async def get_params_for_query_project_files(): # This function is for "query_project_file_path" now
-    params = {}
-    project_keyword = input("请输入项目名称关键字 (可选, 回车跳过): ").strip()
-    # status_keyword is removed
-    year_keyword = input("请输入年份 (可选, 精确匹配, 回车跳过): ").strip()
-
-    return_type_choice = input("仅返回项目名称 (p) 还是返回完整文件列表 (f)? [p]: ").strip().lower()
-    project_names_only = True
-    if return_type_choice == 'f':
-        project_names_only = False
-    elif return_type_choice not in ('p', ''):
-        print("无效的选择，将仅返回项目名称。")
-
-    if project_keyword: params["project_name"] = project_keyword
-    # status parameter is removed
-    if year_keyword: params["year"] = year_keyword
-    params["project_names_only"] = project_names_only
-    return params
 
 async def get_params_for_query_specification_knowledge_base():
     params = {}
@@ -124,9 +105,15 @@ async def get_params_for_query_specification_knowledge_base():
     return params
 
 async def get_params_for_query_specification_files():
-    """为 query_specification_files 工具交互式地获取参数。"""
+    """为 open_specification_files 工具交互式地获取参数。"""
     params = {}
-    print("\n--- 配置 'query_specification_files' 工具参数 ---")
+    print("\n--- 配置 'open_specification_files' 工具参数 ---")
+
+    user = input("请输入用户名 (必需): ").strip()
+    while not user:
+        print("错误: 用户名不能为空。")
+        user = input("请输入用户名 (必需): ").strip()
+    params["user"] = user
 
     query = input("请输入规程规范的查询关键字 (必需, 输入 '/ALL' 返回所有规范): ").strip()
     while not query:
@@ -169,6 +156,11 @@ async def get_params_for_vector_query():
 
 async def get_params_two_stage_vector_query():
     params = {}
+    user = input("请输入用户名 (必需): ").strip()
+    while not user:
+        print("错误: 用户名不能为空。")
+        user = input("请输入用户名 (必需): ").strip()
+    params["user"] = user
     #params['query_type'] = "project"
     query = input("请输入项目查询关键字 (必需): ").strip()
     while not query:
@@ -183,6 +175,35 @@ async def get_params_two_stage_vector_query():
     # else:
     #     params["top_n"] = 5
     #     print("提示: 使用默认值 top_n=5")
+    return params
+
+async def get_params_for_write_review_doc():
+    """为 write_review_doc 工具交互式地获取参数。"""
+    params = {}
+    print("\n--- 配置 'write_review_doc' 工具参数 ---")
+
+    get_manual_input = input("是否获取操作指令 (get_manual=True)? (y/n, 默认 n): ").strip().lower()
+    get_manual = get_manual_input == 'y'
+    params["get_manual"] = get_manual
+
+    template_type = input("请输入模板类型 (例如: 主变扩建工程模板): ").strip()
+    params["template_type"] = template_type
+
+    if not get_manual:
+        project_name = input("请输入项目名称 (必需): ").strip()
+        while not project_name:
+            print("错误: 项目名称不能为空。")
+            project_name = input("请输入项目名称 (必需): ").strip()
+        params["project_name"] = project_name
+
+        print("请输入包含评审信息的JSON内容。")
+        print("示例: {\"item1\": \"意见A\", \"item2\": \"意见B\"}")
+        content_str = input("JSON内容 (必需): ").strip()
+        while not content_str:
+            print("错误: 内容不能为空。")
+            content_str = input("JSON内容 (必需): ").strip()
+        params["content"] = content_str
+
     return params
 
 async def get_params_dynamically(tool_definition):
@@ -349,14 +370,14 @@ async def main():
                             params = {}
                             tool_definition = tool_list[choice - 1]
 
-                            if selected_tool_name == "query_project_file_path": # Updated tool name
-                                params = await get_params_for_query_project_files()
-                            elif selected_tool_name == "query_specification_knowledge_base":
+                            if selected_tool_name == "query_specification_knowledge_base":
                                 params = await get_params_for_query_specification_knowledge_base()
-                            elif selected_tool_name == "query_specification_files":
+                            elif selected_tool_name == "open_specification_files":
                                 params = await get_params_for_query_specification_files()
                             elif selected_tool_name == "query_project_files":
                                 params = await get_params_two_stage_vector_query()
+                            elif selected_tool_name == "write_review_doc":
+                                params = await get_params_for_write_review_doc()
                             elif tool_definition:
                                 params = await get_params_dynamically(tool_definition)
                             else:

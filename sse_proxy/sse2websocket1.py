@@ -5,13 +5,15 @@ from fastapi import WebSocket, WebSocketDisconnect
 from starlette.websockets import WebSocketState
 from loguru import logger
 from config import settings
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, cast, Union
 from openai.types.chat import ChatCompletionMessageParam
 import aiofiles
 from pathlib import Path
 from fastmcp import Client
 from openai.types.chat.chat_completion_tool_param import ChatCompletionToolParam
-from openai import NOT_GIVEN
+from openai import NOT_GIVEN, NotGiven
+from core.app_state import session_manager
+from datetime import datetime
 
 
 class OpenAIWebSocketProxy:
@@ -19,7 +21,7 @@ class OpenAIWebSocketProxy:
     通过WebSocket接收前端消息，调用OpenAI兼容的API，
     并将SSE流转换为旧格式转发给前端，同时保存对话历史。
     """
-    def __init__(self, websocket: WebSocket, username: str, session_id: str, system_prompt):
+    def __init__(self, websocket: WebSocket, username: str, session_id: str, system_prompt, save_history = False):
         self.websocket = websocket
         self.username = username
         self.session_id = session_id
@@ -35,6 +37,9 @@ class OpenAIWebSocketProxy:
         self.available_tools = None
         self.system_prompt = system_prompt
         self.tool_call_id = 0
+        self.save_history = save_history
+        self.chat_task = None
+
 
     async def _send_event_to_websocket(self, event: Dict[str, Any]):
         try:
@@ -111,12 +116,22 @@ class OpenAIWebSocketProxy:
             return "[系统错误] 工具调用嵌套太深"
 
         try:
+            logger.debug(f"调用openai_client,model:{self.model_name}")
+            # 类型转换以匹配OpenAI库的期望
+            typed_messages: List[ChatCompletionMessageParam] = [
+                cast(ChatCompletionMessageParam, message) for message in messages
+            ]
+            typed_tools: Union[List[ChatCompletionToolParam], NotGiven] = NOT_GIVEN
+            if self.available_tools:
+                typed_tools = [cast(ChatCompletionToolParam, tool) for tool in self.available_tools]
+
+
             stream = await self.openai_client.chat.completions.create(
                 model=self.model_name,
-                messages=messages,
+                messages=typed_messages,
                 stream=True,
                 temperature=0.7,
-                tools=self.available_tools or NOT_GIVEN,
+                tools=typed_tools,
             )
         except Exception as e:
             logger.error(f"调用OpenAI API失败: {e}", exc_info=True)
@@ -173,7 +188,7 @@ class OpenAIWebSocketProxy:
                 continue
 
             logger.info(f"执行工具调用: {tool_name} with args: {tool_args_str}")
-            
+
 
             try:
                 tool_args = json.loads(tool_args_str)
@@ -197,6 +212,8 @@ class OpenAIWebSocketProxy:
         return tool_messages
 
     async def _save_history_to_file(self):
+        if not self.save_history:
+            return
         try:
             history_dir = Path(settings.CONVERSATION_ROOT_PATH) / self.username
             history_dir.mkdir(parents=True, exist_ok=True)
@@ -225,9 +242,17 @@ class OpenAIWebSocketProxy:
                 ]
                 logger.debug(f"获取到的工具列表: {[t['function']['name'] for t in self.available_tools]}")
 
+            # 若工作目录不为空，增加到系统提示词中
+            work_files = ""
+            if session_manager:
+                user_session_data = await session_manager.get_user_data(self.username)
+                if user_session_data and user_session_data.working_directory:
+                        paths = [file_entry.file_path for file_entry in user_session_data.working_directory.files]
+                        work_files = "\n".join(paths)
+
             self.history.append({
                 "role": "system",
-                "content": self.system_prompt + f"下面是用户:{self.username}提问:\n"
+                "content": self.system_prompt + f"工作目录文件列表：{work_files}" + f"下面是用户:{self.username}提问:\n"
             })
 
             while True:
@@ -241,6 +266,12 @@ class OpenAIWebSocketProxy:
                     await self.websocket.send_json({"type": "stop_request_processed"})
                 # Bug 1 后端修复：处理新对话开始事件
                 elif msg.get("type") == "start_conversation":
+                    # 更新openai客户端信息
+                    self.openai_client = openai.AsyncOpenAI(
+                        api_key=settings.OPENAI_API_KEY.get_secret_value(),
+                        base_url=str(settings.OPENAI_API_BASE_URL),
+                    )
+                    self.model_name = settings.OPENAI_MODEL_NAME
                     self.conversation_id = msg.get("conversation_id")
                     logger.info(f"收到新对话开始事件，对话ID: {self.conversation_id}。清空历史记录。")
                     # 清空历史记录并重新初始化
@@ -270,7 +301,7 @@ class OpenAIWebSocketProxy:
                 else:
                     await self.websocket.send_json({"type": "error", "content": "未知请求类型"})
         except WebSocketDisconnect:
-            logger.info(f"WebSocket 会话 {self.session_id} 用户 {self.username} 断开连接")
+            logger.debug(f"WebSocket 会话 {self.session_id} 用户 {self.username} 断开连接")
             self._stop()
         except Exception as e:
             logger.error(f"WebSocket 错误 (会话 {self.session_id}): {e}", exc_info=True)

@@ -101,7 +101,7 @@ html, body {
   <div>API加载: <span id="api-status">检查中...</span></div>
   <div>时间: <span id="current-time"></span></div>
   <div>Token过期: <span id="token-exp"></span></div>
-  
+
   <div id="network-tests">
     <div><strong>网络测试:</strong></div>
     <div id="test-results"></div>
@@ -121,10 +121,10 @@ function updateDebugInfo() {
   const now = new Date();
   const currentTime = Math.floor(now.getTime() / 1000);
   const tokenExp = 1752731484;
-  
+
   document.getElementById('current-time').textContent = `${currentTime} (${now.toLocaleString()})`;
   document.getElementById('token-exp').textContent = `${tokenExp} (${new Date(tokenExp * 1000).toLocaleString()})`;
-  
+
   if (currentTime > tokenExp) {
     document.getElementById('status').textContent = 'Token已过期！';
     document.getElementById('status').style.color = 'red';
@@ -148,7 +148,7 @@ function checkAPIStatus() {
 async function testNetworkConnections() {
   const testResults = document.getElementById('test-results');
   testResults.innerHTML = '<div>正在测试网络连接...</div>';
-  
+
   const tests = [
     {
       name: 'Document Server Health',
@@ -167,34 +167,34 @@ async function testNetworkConnections() {
       url: 'http://192.168.43.48:8888/onlyoffice/callback'
     }
   ];
-  
+
   testResults.innerHTML = '';
-  
+
   for (const test of tests) {
     const resultDiv = document.createElement('div');
     resultDiv.className = 'test-result';
     resultDiv.innerHTML = `${test.name}: 测试中...`;
     testResults.appendChild(resultDiv);
-    
+
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
-      
-      const response = await fetch(test.url, { 
+
+      const response = await fetch(test.url, {
         method: 'HEAD',
         signal: controller.signal,
         mode: 'no-cors' // 避免CORS问题
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       resultDiv.className = 'test-result test-success';
       resultDiv.innerHTML = `${test.name}: ✓ 连接成功`;
       console.log(`${test.name}: 连接成功`);
-      
+
     } catch (error) {
       resultDiv.className = 'test-result test-error';
-      
+
       if (error.name === 'AbortError') {
         resultDiv.innerHTML = `${test.name}: ✗ 超时`;
         console.error(`${test.name}: 连接超时`);
@@ -255,34 +255,34 @@ async function initEditor() {
     setTimeout(initEditor, 500);
     return;
   }
-  
+
   document.getElementById('status').textContent = '正在测试网络连接...';
-  
+
   // 先测试网络连接
   await testNetworkConnections();
-  
+
   document.getElementById('status').textContent = '正在初始化编辑器...';
-  
+
   try {
     const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkb2N1bWVudCI6eyJmaWxlVHlwZSI6ImRvY3giLCJrZXkiOiIwZDBiMGQwZGY3MGI0ZDIwOThlNWJjNWY1ZTE2MTU2NV8xNzUyNzIwNjg0IiwidGl0bGUiOiJcdTRmMWFcdThiYWVcdTdlYWFcdTg5ODFfXHU2YzVmXHU4MmNmXHU4MmNmXHU1ZGRlXHU4MjM5XHU5NWY4MTEwXHU1MzQzXHU0ZjBmXHU1M2Q4XHU3NTM1XHU3YWQ5Mlx1NTNmNzNcdTUzZjdcdTRlM2JcdTUzZDhcdTYyNjlcdTVlZmFcdTVkZTVcdTdhMGIyMDI0LjcuMjMuZG9jeCIsInVybCI6Imh0dHA6Ly8xOTIuMTY4LjQzLjQ4Ojg4ODgvZG93bmxvYWQvMGQwYjBkMGRmNzBiNGQyMDk4ZTViYzVmNWUxNjE1NjUvJUU0JUJDJTlBJUU4JUFFJUFFJUU3JUJBJUFBJUU4JUE2JTgxXyVFNiVCMSU5RiVFOCU4QiU4RiVFOCU4QiU4RiVFNSVCNyU5RSVFOCU4OCVCOSVFOSU5NyVCODExMCVFNSU4RCU4MyVFNCVCQyU4RiVFNSU4RiU5OCVFNyU5NCVCNSVFNyVBQiU5OTIlRTUlOEYlQjczJUU1JThGJUI3JUU0JUI4JUJCJUU1JThGJTk4JUU2JTg5JUE5JUU1JUJCJUJBJUU1JUI3JUE1JUU3JUE4JThCMjAyNC43LjIzLmRvY3giLCJwZXJtaXNzaW9ucyI6eyJlZGl0Ijp0cnVlLCJkb3dubG9hZCI6dHJ1ZSwicHJpbnQiOnRydWV9fSwiZG9jdW1lbnRUeXBlIjoid29yZCIsImVkaXRvckNvbmZpZyI6eyJjYWxsYmFja1VybCI6Imh0dHA6Ly8xOTIuMTY4LjQzLjQ4Ojg4ODgvb25seW9mZmljZS9jYWxsYmFjaz9maWxlbmFtZT0lRTQlQkMlOUElRTglQUUlQUUlRTclQkElQUElRTglQTYlODFfJUU2JUIxJTlGJUU4JThCJThGJUU4JThCJThGJUU1JUI3JTlFJUU4JTg4JUI5JUU5JTk3JUI4MTEwJUU1JThEJTgzJUU0JUJDJThGJUU1JThGJTk4JUU3JTk0JUI1JUU3JUFCJTk5MiVFNSU4RiVCNzMlRTUlOEYlQjclRTQlQjglQkIlRTUlOEYlOTglRTYlODklQTklRTUlQkIlQkElRTUlQjclQTUlRTclQTglOEIyMDI0LjcuMjMuZG9jeCIsIm1vZGUiOiJlZGl0IiwibGFuZyI6InpoLUNOIiwidXNlciI6eyJpZCI6ImFkbWluIiwibmFtZSI6ImFkbWluIn0sImN1c3RvbWl6YXRpb24iOnsiZm9yY2VzYXZlIjp0cnVlfX0sImV4cCI6MTc1MjczMTQ4NH0.ttEfKgr82Jle0racel68BauvoRT9zZgKxLLap0rFyoM";
-    
+
     // 解析JWT内容
     const payload = parseJWT(jwt);
     if (payload) {
       console.log('JWT内容:', payload);
     }
-    
+
     // 超时处理
     const timeoutId = setTimeout(() => {
       document.getElementById('status').textContent = '✗ 初始化超时 - 尝试简化配置';
       document.getElementById('status').style.color = 'red';
-      
+
       // 尝试使用简化配置
       trySimpleConfig();
     }, 30000); // 30秒超时
-    
+
     console.log('开始初始化OnlyOffice编辑器...');
-    
+
     const docEditor = new DocsAPI.DocEditor("placeholder", {
       token: jwt,
       width: "100%",
@@ -316,9 +316,9 @@ async function initEditor() {
         }
       }
     });
-    
+
     console.log('DocEditor initialized:', docEditor);
-    
+
   } catch (error) {
     document.getElementById('status').textContent = '✗ 初始化失败: ' + error.message;
     document.getElementById('status').style.color = 'red';
@@ -329,14 +329,14 @@ async function initEditor() {
 // 尝试简化配置
 function trySimpleConfig() {
   console.log('尝试使用简化配置...');
-  
+
   try {
     const config = createSimpleTestConfig();
     console.log('简化配置:', config);
-    
+
     const docEditor = new DocsAPI.DocEditor("placeholder", config);
     console.log('简化版DocEditor initialized:', docEditor);
-    
+
   } catch (error) {
     console.error('简化配置也失败:', error);
     document.getElementById('status').textContent = '✗ 简化配置也失败: ' + error.message;
@@ -347,7 +347,7 @@ function trySimpleConfig() {
 window.addEventListener('load', function() {
   updateDebugInfo();
   setInterval(updateDebugInfo, 5000); // 每5秒更新一次时间信息
-  
+
   // 延迟初始化，确保API完全加载
   setTimeout(initEditor, 1000);
 });
